@@ -1,0 +1,3533 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Performance Testing Lab</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #1d4ed8;
+      --primary-strong: #1e40af;
+      --primary-soft: #dbeafe;
+      --accent: #0f766e;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --info: #2563eb;
+      --bg: #f6f8fc;
+      --bg-soft: #eef3fb;
+      --card: #ffffff;
+      --card-alt: #f8fbff;
+      --text: #172033;
+      --text-soft: #5e6b85;
+      --border: #d7e0ee;
+      --border-strong: #bfd0ea;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      --shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.06);
+      --hero: linear-gradient(135deg, #eff6ff 0%, #f8fafc 45%, #ecfeff 100%);
+      --button-grad: linear-gradient(135deg, #2563eb, #0f766e);
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'DM Sans', system-ui, sans-serif;
+      --chart-line: #2563eb;
+      --chart-fill: rgba(37, 99, 235, 0.14);
+    }
+
+    [data-theme="dark"] {
+      --primary: #93c5fd;
+      --primary-strong: #60a5fa;
+      --primary-soft: rgba(59, 130, 246, 0.16);
+      --accent: #5eead4;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --info: #60a5fa;
+      --bg: #08101d;
+      --bg-soft: #0e1729;
+      --card: #111b2f;
+      --card-alt: #16233b;
+      --text: #e5edf9;
+      --text-soft: #9eb0cb;
+      --border: #233452;
+      --border-strong: #35507d;
+      --shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+      --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.24);
+      --hero: linear-gradient(135deg, rgba(37, 99, 235, 0.16) 0%, rgba(17, 24, 39, 1) 50%, rgba(15, 118, 110, 0.14) 100%);
+      --button-grad: linear-gradient(135deg, #2563eb, #14b8a6);
+      --chart-line: #93c5fd;
+      --chart-fill: rgba(147, 197, 253, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 24%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(37, 99, 235, 0.06) 0.8px, transparent 0.8px);
+      background-size: 18px 18px;
+      opacity: 0.35;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.9fr);
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .hero-main,
+    .hero-side {
+      background: var(--hero);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      padding: 28px;
+    }
+
+    .hero-side {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-compact-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+    }
+
+    .hero-main-heading {
+      margin-top: 6px;
+    }
+
+    .brand-badge {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      background: var(--button-grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.45rem;
+      box-shadow: var(--shadow-soft);
+      flex-shrink: 0;
+    }
+
+    .eyebrow,
+    .group-label,
+    .section-kicker,
+    .stat-caption,
+    .analysis-label,
+    .tiny {
+      font-family: var(--mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow {
+      font-size: 0.76rem;
+      color: var(--primary-strong);
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 3vw, 3.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
+    }
+
+    .hero-main p {
+      font-size: 1rem;
+      max-width: 780px;
+      color: var(--text-soft);
+      margin-bottom: 18px;
+    }
+
+    .hero-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 14px;
+    }
+
+    .hero-toggle.no-margin {
+      margin-bottom: 0;
+    }
+
+    .hero-toggle:hover {
+      transform: translateY(-2px);
+    }
+
+    .hero-toggle-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .hero-collapse-content {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-collapsible:not(.open) .hero-collapse-content {
+      display: none;
+    }
+
+    .hero-side-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip,
+    .theme-toggle,
+    .tab-btn,
+    .btn,
+    .pill,
+    .scenario-item,
+    .layer-link,
+    .context-btn {
+      transition: all 0.2s ease;
+    }
+
+    .chip,
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 0.82rem;
+      font-weight: 600;
+      backdrop-filter: blur(10px);
+    }
+
+    [data-theme="dark"] .chip,
+    [data-theme="dark"] .pill {
+      background: rgba(17, 27, 47, 0.8);
+    }
+
+    .theme-toggle {
+      border: 1px solid var(--border-strong);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-family: var(--mono);
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .theme-toggle:hover,
+    .tab-btn:hover,
+    .btn:hover,
+    .scenario-item:hover,
+    .layer-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .hero-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .hero-stat strong {
+      display: block;
+      font-size: 1.8rem;
+      line-height: 1;
+      margin-bottom: 6px;
+      color: var(--primary-strong);
+      letter-spacing: -0.04em;
+    }
+
+    .hero-side h2 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    .hero-side ul {
+      padding-left: 18px;
+      color: var(--text-soft);
+      display: grid;
+      gap: 6px;
+    }
+
+    .tabs-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .tabs-wrap {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .tab-group {
+      min-width: min(100%, 320px);
+      flex: 1 1 320px;
+      padding: 12px;
+      border-radius: 18px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+    }
+
+    .group-label {
+      color: var(--text-soft);
+      font-size: 0.73rem;
+      margin-bottom: 8px;
+    }
+
+    .tab-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text-soft);
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+
+    .tab-btn.active {
+      background: var(--button-grad);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeUp 0.25s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .content-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section-card,
+    .viz-card,
+    .analysis-card,
+    .sidebar,
+    .stat-card,
+    .mini-card,
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .section-card,
+    .table-card {
+      padding: 24px;
+    }
+
+    .collapsible-section {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .collapse-trigger {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      text-align: left;
+    }
+
+    .collapse-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .collapse-kicker {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary-strong);
+    }
+
+    .collapse-title {
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .collapse-meta {
+      color: var(--text-soft);
+      font-size: 0.88rem;
+    }
+
+    .collapse-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      font-size: 1.2rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .collapsible-content {
+      padding: 0 24px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .collapsible-section:not(.open) .collapsible-content {
+      display: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-kicker {
+      color: var(--primary-strong);
+      font-size: 0.72rem;
+    }
+
+    .section-line {
+      height: 1px;
+      background: var(--border);
+      flex: 1;
+    }
+
+    .section-card h2,
+    .section-card h3,
+    .table-card h3 {
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .section-card p,
+    .section-card li,
+    .table-card p,
+    .table-card li {
+      color: var(--text-soft);
+    }
+
+    .section-card ul,
+    .section-card ol,
+    .table-card ul {
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .highlight-box,
+    .analogy-box {
+      border-radius: 18px;
+      padding: 18px;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(15, 118, 110, 0.08));
+    }
+
+    .analogy-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(254, 249, 195, 0.75));
+    }
+
+    [data-theme="dark"] .analogy-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(120, 53, 15, 0.18));
+    }
+
+    .card-grid,
+    .tool-grid,
+    .pitfall-grid,
+    .path-grid,
+    .layer-grid,
+    .test-grid,
+    .decision-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .card-grid,
+    .tool-grid,
+    .pitfall-grid,
+    .layer-grid,
+    .test-grid,
+    .decision-grid {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .path-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card,
+    .phase-card,
+    .test-card,
+    .tool-card,
+    .pitfall-card,
+    .layer-link,
+    .decision-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+    }
+
+    .phase-card,
+    .test-card,
+    .layer-link {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .card-head-inline,
+    .sidebar-title-row,
+    .guide-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-head-inline {
+      margin-bottom: 10px;
+    }
+
+    .card-head-inline h3,
+    .sidebar-title-row h2 {
+      margin-bottom: 0;
+    }
+
+    .learning-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .learning-badge.basic {
+      color: var(--success);
+      background: rgba(21, 128, 61, 0.12);
+      border-color: rgba(21, 128, 61, 0.2);
+    }
+
+    .learning-badge.advanced {
+      color: var(--warning);
+      background: rgba(180, 83, 9, 0.12);
+      border-color: rgba(180, 83, 9, 0.2);
+    }
+
+    [data-theme="dark"] .learning-badge.basic {
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(134, 239, 172, 0.2);
+    }
+
+    [data-theme="dark"] .learning-badge.advanced {
+      color: #fcd34d;
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(252, 211, 77, 0.18);
+    }
+
+    .guide-card {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.07), rgba(15, 118, 110, 0.08));
+      display: grid;
+      gap: 14px;
+    }
+
+    .guide-head {
+      align-items: center;
+    }
+
+    .guide-title {
+      display: grid;
+      gap: 4px;
+    }
+
+    .guide-title strong {
+      letter-spacing: -0.02em;
+    }
+
+    .guide-copy {
+      color: var(--text-soft);
+      font-size: 0.92rem;
+    }
+
+    .guide-block {
+      display: grid;
+      gap: 8px;
+    }
+
+    .guide-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary-strong);
+    }
+
+    .guide-list {
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+      color: var(--text-soft);
+    }
+
+    .guide-note {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      padding: 12px 14px;
+      color: var(--text-soft);
+      font-size: 0.92rem;
+    }
+
+    .guide-collapsible {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .guide-summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      cursor: pointer;
+    }
+
+    .guide-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .guide-summary .guide-copy {
+      margin-top: 2px;
+      font-size: 0.88rem;
+    }
+
+    .guide-content {
+      display: grid;
+      gap: 14px;
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .guide-toggle-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .guide-collapsible[open] .guide-toggle-icon {
+      background: var(--bg-soft);
+    }
+
+    .tooltip-term {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: help;
+      text-decoration: underline dotted;
+      text-decoration-thickness: 1.5px;
+      text-underline-offset: 0.14em;
+    }
+
+    .tooltip-term::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%) translateY(4px);
+      width: min(260px, 70vw);
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border-strong);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: var(--shadow-soft);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 8;
+      text-decoration: none;
+    }
+
+    .tooltip-term::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 4px);
+      transform: translateX(-50%) translateY(4px) rotate(45deg);
+      width: 10px;
+      height: 10px;
+      background: var(--card);
+      border-left: 1px solid var(--border-strong);
+      border-top: 1px solid var(--border-strong);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 7;
+    }
+
+    .tooltip-term:hover::after,
+    .tooltip-term:hover::before,
+    .tooltip-term:focus-visible::after,
+    .tooltip-term:focus-visible::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .tooltip-term:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    .practice-grid,
+    .practice-steps,
+    .practice-metrics,
+    .practice-decision-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .practice-grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+    }
+
+    .practice-steps,
+    .practice-metrics,
+    .practice-decision-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .practice-step,
+    .practice-card,
+    .practice-decision {
+      padding: 18px;
+      border-radius: 18px;
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+    }
+
+    .practice-step h3,
+    .practice-card h3,
+    .practice-decision h3 {
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .practice-step p,
+    .practice-card p,
+    .practice-decision p {
+      color: var(--text-soft);
+    }
+
+    .practice-flow {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .practice-flow-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .practice-flow-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .practice-flow-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .practice-flow-copy span {
+      color: var(--text-soft);
+      display: block;
+    }
+
+    .practice-metric-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: var(--shadow-soft);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .practice-language {
+      margin-top: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(15, 118, 110, 0.08));
+      padding: 16px;
+    }
+
+    .practice-language p + p {
+      margin-top: 8px;
+    }
+
+    .context-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .context-btn.compact {
+      padding: 6px 10px;
+      font-size: 0.76rem;
+    }
+
+    .context-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .scenario-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .scenario-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .usecase-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(8, 15, 30, 0.56);
+      backdrop-filter: blur(8px);
+    }
+
+    .usecase-modal.open {
+      display: flex;
+    }
+
+    .usecase-dialog {
+      width: min(980px, 100%);
+      max-height: min(84vh, 920px);
+      overflow: auto;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .usecase-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .usecase-header h2 {
+      margin-top: 6px;
+      margin-bottom: 8px;
+      letter-spacing: -0.03em;
+    }
+
+    .usecase-close {
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text);
+      border-radius: 14px;
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .usecase-summary {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(15, 118, 110, 0.08));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 16px;
+      color: var(--text-soft);
+    }
+
+    .usecase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .usecase-card {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .usecase-card h3 {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .usecase-card p {
+      color: var(--text-soft);
+      margin-bottom: 10px;
+    }
+
+    .usecase-card ul {
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+      color: var(--text-soft);
+    }
+
+    .usecase-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-soft);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .phase-card::before,
+    .test-card::before,
+    .layer-link::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 4px;
+      background: var(--button-grad);
+    }
+
+    .metric-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+    }
+
+    .metric-table th,
+    .metric-table td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .metric-table th {
+      color: var(--text-soft);
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      background: var(--bg-soft);
+    }
+
+    .flow-diagram {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 16px;
+    }
+
+    .flow-step,
+    .flow-arrow {
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      font-weight: 700;
+    }
+
+    .flow-arrow {
+      padding: 10px 12px;
+      color: var(--primary-strong);
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .viz-card,
+    .analysis-card {
+      padding: 20px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0 18px;
+    }
+
+    .scenario-item {
+      border: 1px solid var(--border);
+      background: var(--card-alt);
+      border-radius: 16px;
+      padding: 12px 14px;
+      cursor: pointer;
+    }
+
+    .scenario-item.active {
+      border-color: var(--primary-strong);
+      background: var(--primary-soft);
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+    }
+
+    .scenario-name {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .scenario-desc {
+      color: var(--text-soft);
+      font-size: 0.86rem;
+    }
+
+    .playground {
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .param-row {
+      margin-bottom: 12px;
+    }
+
+    .param-row label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.88rem;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+
+    .param-row span {
+      color: var(--primary-strong);
+      font-weight: 700;
+      font-family: var(--mono);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary-strong);
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--button-grad);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-caption {
+      font-size: 0.7rem;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+    }
+
+    .stat-value.ok { color: var(--success); }
+    .stat-value.warn { color: var(--warning); }
+    .stat-value.bad { color: var(--danger); }
+
+    .stat-unit {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      margin-top: 6px;
+    }
+
+    .viz-header,
+    .analysis-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .viz-title {
+      font-weight: 700;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+      animation: pulse 1.4s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45); }
+      70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text-soft);
+    }
+
+    .tag.ok { color: var(--success); }
+    .tag.warn { color: var(--warning); }
+    .tag.bad { color: var(--danger); }
+    .tag.info { color: var(--info); }
+
+    .actors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 48px;
+      margin-bottom: 14px;
+    }
+
+    .actor {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      background: var(--info);
+      font-size: 0.75rem;
+      box-shadow: var(--shadow-soft);
+      animation: popIn 0.24s ease;
+    }
+
+    .actor.square {
+      border-radius: 10px;
+    }
+
+    .actor.error {
+      background: var(--danger);
+      animation: shake 0.32s ease;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.2);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+
+    .progress-wrap {
+      margin-bottom: 12px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.82rem;
+      margin-bottom: 6px;
+      color: var(--text-soft);
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: var(--bg-soft);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: var(--button-grad);
+      transition: width 0.28s ease;
+    }
+
+    .chart-container {
+      height: 220px;
+    }
+
+    .analysis-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .analysis-body {
+      display: grid;
+      gap: 12px;
+    }
+
+    .analysis-plain-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .analysis-plain-card {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.07), rgba(15, 118, 110, 0.08));
+    }
+
+    .analysis-plain-card p {
+      color: var(--text-soft);
+      margin: 0;
+    }
+
+    .analysis-plain-card strong {
+      display: block;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .analysis-block {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .analysis-label {
+      color: var(--text-soft);
+      font-size: 0.7rem;
+      margin-bottom: 6px;
+    }
+
+    .analysis-text ul {
+      padding-left: 18px;
+      display: grid;
+      gap: 5px;
+    }
+
+    footer {
+      margin-top: 22px;
+      text-align: center;
+      color: var(--text-soft);
+      font-size: 0.86rem;
+      padding: 22px 12px 8px;
+    }
+
+    strong {
+      color: var(--primary-strong);
+    }
+
+    @media (max-width: 1120px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .path-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .practice-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .container {
+        padding: 14px;
+      }
+
+      .top-row {
+        flex-direction: column;
+      }
+
+      .hero-main,
+      .hero-side,
+      .tabs-panel,
+      .section-card,
+      .table-card,
+      .sidebar,
+      .viz-card,
+      .analysis-card {
+        padding: 18px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-diagram {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .flow-arrow {
+        text-align: center;
+      }
+
+      .collapse-trigger,
+      .collapsible-content {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <section class="hero-main">
+        <div class="top-row">
+          <div class="brand">
+            <div class="brand-badge">PT</div>
+            <div class="brand-copy">
+              <div class="eyebrow">Merged Learning Lab</div>
+              <div class="brand-compact-title">Lộ trình học <strong>Performance Testing</strong> từ nền tảng đến tối ưu production</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="hero-toggle no-margin" id="hero-main-toggle" type="button" aria-expanded="true" data-open-label="Thu gọn" data-closed-label="Mở rộng">
+              <span>Thu gọn</span>
+              <span class="hero-toggle-icon">−</span>
+            </button>
+            <button class="theme-toggle" id="theme-toggle" type="button">🌙 Dark</button>
+          </div>
+        </div>
+        <div class="hero-collapsible open" id="hero-main-collapsible">
+          <div class="hero-collapse-content" id="hero-main-content">
+            <div class="hero-main-heading">
+              <h1>Lộ trình học <strong>Performance Testing</strong> từ nền tảng đến tối ưu production</h1>
+              <p>Phiên bản hợp nhất giữa roadmap học tập và playground mô phỏng. Mặc định giao diện sáng, có nút chuyển tối, toàn bộ nội dung dùng tiếng Việt và các thuật ngữ bắt buộc bằng tiếng Anh sẽ được làm nổi bật.</p>
+            </div>
+            <div class="hero-actions">
+              <span class="chip">📘 2 phần lý thuyết lớn</span>
+              <span class="chip">🧪 6 nhóm <strong>Load Test</strong></span>
+              <span class="chip">🧩 9 layer tối ưu hệ thống</span>
+              <span class="chip">📊 54 scenario mô phỏng</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <aside class="hero-side">
+        <div class="hero-collapsible open" id="hero-side-collapsible">
+          <div class="hero-side-title">
+            <h2>Trọng tâm build</h2>
+            <button class="hero-toggle no-margin" id="hero-side-toggle" type="button" aria-expanded="true" data-open-label="Ẩn bớt" data-closed-label="Chi tiết" style="padding:8px 12px;">
+              <span>Chi tiết</span>
+              <span class="hero-toggle-icon">−</span>
+            </button>
+          </div>
+          <div class="hero-collapse-content" id="hero-side-content">
+            <div>
+              <ul>
+                <li>Đi từ khái niệm, ngưỡng đo, workflow, rồi mới sang thực hành mô phỏng.</li>
+                <li>Tách rõ test theo loại tải và test theo layer hệ thống để tránh học dàn trải.</li>
+                <li>Đưa thêm phần <strong>CI/CD</strong>, <strong>Observability</strong> và <strong>Chaos Engineering</strong> để lộ trình toàn diện hơn.</li>
+              </ul>
+            </div>
+            <div class="hero-stats">
+              <div class="hero-stat"><strong>17</strong><span>Tổng số tab</span></div>
+              <div class="hero-stat"><strong>54</strong><span>Scenario mô phỏng</span></div>
+              <div class="hero-stat"><strong>3</strong><span>Giai đoạn học</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <section class="tabs-panel">
+      <div class="tabs-wrap" id="tabs-wrap"></div>
+    </section>
+
+    <main id="app-content"></main>
+
+    <footer>
+      Performance Testing Lab hợp nhất từ roadmap và interactive demos. Theme mặc định là light, có toggle dark, tối ưu cho desktop và mobile.
+    </footer>
+  </div>
+
+  <script>
+    const STATIC_TABS = [
+      { id: 'roadmap', name: '📍 Roadmap', group: 'Kiến thức nền' },
+      { id: 'theory', name: '📚 Lý thuyết', group: 'Kiến thức nền' },
+      { id: 'practice', name: '🎯 Practice Path', group: 'Kiến thức nền' }
+    ];
+
+    const LOAD_TAB_ORDER = ['smoke', 'average', 'stress', 'spike', 'breakpoint', 'soak'];
+    const LAYER_TAB_ORDER = ['frontend', 'database', 'cache', 'mq', 'cdn', 'infra', 'auth', 'websocket', 'search'];
+    const API_TAB_ORDER = ['api'];
+
+    const USE_CASE_LIBRARY = {
+      load: {
+        smoke: {
+          title: 'Smoke Test trong ứng dụng thật',
+          summary: 'Dùng sau deploy hoặc hotfix để kiểm tra đường đi quan trọng còn sống trước khi cho user thật vào.',
+          examples: [
+            { icon: '🛒', app: 'App mua hàng', situation: 'Mở homepage, product detail, cart, checkout ngay sau deploy.', points: ['Nếu fail thì dừng release ngay.', 'Không cần tải lớn, chỉ cần đúng chức năng và response ổn.'] },
+            { icon: '🎫', app: 'App bán vé', situation: 'Kiểm tra màn sự kiện, sơ đồ ghế và giữ ghế còn hoạt động sau hotfix.', points: ['Smoke giúp bắt lỗi 500 hoặc timeout sớm.', 'Đặc biệt quan trọng trước giờ mở bán.'] },
+            { icon: '🏦', app: 'App ngân hàng', situation: 'Test nhanh login, xem số dư, lịch sử giao dịch sau khi đổi auth/config.', points: ['Luồng cốt lõi phải ổn trước khi chạy bài lớn hơn.', 'Đây là vùng không được phép fail âm thầm.'] }
+          ]
+        },
+        average: {
+          title: 'Average Load Test trong ứng dụng thật',
+          summary: 'Dùng để lấy baseline traffic ngày thường và theo dõi regression trước-sau release.',
+          examples: [
+            { icon: '🛒', app: 'App mua hàng', situation: 'Browse danh mục, search, thêm giỏ, xem đơn ở mức bình thường.', points: ['Đây là bài giúp team biết trạng thái “ổn định thường ngày”.', 'Rất hợp để so release tuần này với tuần trước.'] },
+            { icon: '🏭', app: 'ERP / nội bộ', situation: 'Dashboard, tra cứu báo cáo, export nhẹ trong giờ làm việc.', points: ['Dễ lộ query chậm hoặc cache miss.', 'Baseline chuẩn giúp bắt regression rất tốt.'] },
+            { icon: '🎓', app: 'Learning platform', situation: 'Sinh viên vào course, xem nội dung, mở quiz ở mức traffic thường.', points: ['Average load giúp đo read-heavy path.', 'Thích hợp để chốt ngưỡng P95 hàng ngày.'] }
+          ]
+        },
+        stress: {
+          title: 'Stress Test trong ứng dụng thật',
+          summary: 'Dùng khi cần xem hệ thống degrade thế nào dưới tải cao hơn bình thường nhưng chưa phải đột biến theo giây.',
+          examples: [
+            { icon: '🛍️', app: 'Flash sale', situation: 'Traffic vào listing và checkout cao hơn ngày thường nhiều lần.', points: ['Soi CPU, DB pool, cache và queue dưới peak.', 'Quan trọng là degrade có kiểm soát hay không.'] },
+            { icon: '📝', app: 'Cổng đăng ký', situation: 'Đầu giờ mở đăng ký môn hoặc đăng ký sự kiện.', points: ['Stress test dễ lộ lock contention, pool exhausted.', 'Giúp chuẩn bị capacity trước giờ mở thực.'] },
+            { icon: '📣', app: 'Campaign site', situation: 'Traffic tăng mạnh sau email blast hoặc ads.', points: ['Cho thấy auto-scaling có bắt nhịp tốt không.', 'Nên nhìn thêm queue backlog và CDN hit.'] }
+          ]
+        },
+        spike: {
+          title: 'Spike Test trong ứng dụng thật',
+          summary: 'Dùng khi traffic tăng đột ngột trong vài giây, điển hình ở mở bán, push notification, livestream.',
+          examples: [
+            { icon: '🎫', app: 'Mở bán vé concert', situation: 'Hàng chục nghìn user cùng click vào đúng phút mở bán.', points: ['Cold start, autoscale, queue và rate limit là điểm nóng.', 'Spike khác stress ở tốc độ tăng tải cực nhanh.'] },
+            { icon: '📺', app: 'Livestream commerce', situation: 'KOL thả link khiến user đổ vào sản phẩm cùng lúc.', points: ['Cart, inventory và payment edge thường bị sốc tải.', 'Cần xem hệ thống phục hồi nhanh thế nào.'] },
+            { icon: '📰', app: 'Portal nội dung', situation: 'Push notification kéo lượng lớn người dùng vào bài hot.', points: ['CDN và origin dễ thấy sự khác biệt rõ nhất.', 'Phù hợp để soi waiting room hoặc cache.'] }
+          ]
+        },
+        breakpoint: {
+          title: 'Breakpoint Test trong ứng dụng thật',
+          summary: 'Dùng để tìm ngưỡng gãy, kiểu gãy, và xem hệ thống có graceful degradation hay hard crash.',
+          examples: [
+            { icon: '🛒', app: 'Black Friday', situation: 'Tăng tải tới lúc checkout không còn giữ được SLA.', points: ['Giúp biết giới hạn thật của hệ thống.', 'Có thể dùng để thiết kế degrade hoặc waiting room.'] },
+            { icon: '🎫', app: 'Bán vé diện rộng', situation: 'Đẩy tới lúc seat lock và payment queue không chịu nổi.', points: ['Quan trọng cho capacity planning.', 'Cần biết gãy ở app, DB hay downstream payment.'] },
+            { icon: '🧾', app: 'Cổng nộp hồ sơ', situation: 'Ngày cuối hạn nộp, traffic tăng tới sát trần.', points: ['Breakpoint giúp trả lời khi nào phải scale hoặc giảm tính năng phụ.', 'Nên test cách hệ thống fail trước khi thực tế xảy ra.'] }
+          ]
+        },
+        soak: {
+          title: 'Soak Test trong ứng dụng thật',
+          summary: 'Dùng khi cần nhìn degradation chậm, leak và drift tài nguyên qua nhiều giờ chạy liên tục.',
+          examples: [
+            { icon: '📦', app: 'OMS / kho vận', situation: 'API và background jobs chạy liên tục cả ngày.', points: ['Rất hợp để soi memory leak, connection leak, disk growth.', '10 phút ổn không có nghĩa là 8 giờ ổn.'] },
+            { icon: '💬', app: 'Customer support', situation: 'Nhiều agent, chat, webhook và sync chạy suốt ca làm việc.', points: ['Dễ lộ session lifecycle không sạch.', 'Quan trọng với ứng dụng long-running.'] },
+            { icon: '🏦', app: 'Core operations', situation: 'Nhiều luồng batch và API chạy xuyên ngày.', points: ['Theo dõi drift memory, queue lag, log growth.', 'Cần trend chứ không chỉ snapshot.'] }
+          ]
+        }
+      },
+      layer: {
+        frontend: {
+          title: 'Frontend map vào ứng dụng thật',
+          summary: 'Khi user thấy chậm, rất nhiều lúc nguyên nhân nằm ở giao diện chứ không phải backend.',
+          examples: [
+            { icon: '🛒', app: 'Mua hàng', situation: 'Trang chi tiết sản phẩm mở lâu vì ảnh, biến thể, widget review.', points: ['Ưu tiên LCP, CLS, TTI.', 'User bỏ đơn vì trang chưa kịp usable.'] },
+            { icon: '🎫', app: 'Mua vé', situation: 'Seat map render giật, thao tác chọn ghế lag.', points: ['FPS và long task quan trọng hơn chỉ API latency.', 'Bundle nặng sẽ phá trải nghiệm đúng lúc peak.'] },
+            { icon: '🎓', app: 'LMS', situation: 'Dashboard course nhiều widget nên chậm mở.', points: ['Cần code split và perf budget.', 'Frontend là nơi user cảm nhận đầu tiên.'] }
+          ]
+        },
+        database: {
+          title: 'Database map vào ứng dụng thật',
+          summary: 'Database là nguồn gốc rất nhiều vấn đề backend ở app transactional hoặc read-heavy.',
+          examples: [
+            { icon: '🛒', app: 'Mua hàng', situation: 'Listing và filter sản phẩm chậm vì query phức tạp.', points: ['Dễ dính missing index hoặc N+1.', 'P95 query kéo cả API xấu theo.'] },
+            { icon: '🎫', app: 'Mua vé', situation: 'Seat lock tranh chấp cao, transaction chờ nhau.', points: ['Lock contention là trọng tâm.', 'Peak sale rất dễ đánh sập DB trước app.'] },
+            { icon: '🏢', app: 'ERP', situation: 'Báo cáo nhiều bảng mở quá chậm.', points: ['Đọc EXPLAIN ANALYZE là bắt buộc.', 'Đừng scale app trước khi hiểu query plan.'] }
+          ]
+        },
+        cache: {
+          title: 'Cache map vào ứng dụng thật',
+          summary: 'Cache đúng thì rất mạnh, cache sai thì tạo ra spike rất khó đoán.',
+          examples: [
+            { icon: '🛒', app: 'Catalog sản phẩm', situation: 'Giá, tồn kho, danh mục bị đọc rất nhiều.', points: ['Sai TTL dễ stale hoặc miss nhiều.', 'Stampede thường xảy ra ở key hot.'] },
+            { icon: '📰', app: 'Portal nội dung', situation: 'Bài hot bị đọc dồn sau push notification.', points: ['Cache hit rate quyết định origin chịu tải ra sao.', 'Need warm-up và invalidation tốt.'] },
+            { icon: '🏦', app: 'Ngân hàng', situation: 'Token validation hoặc config lookup bị gọi liên tục.', points: ['Cache giảm load nền đáng kể.', 'Nhưng phải giữ đúng tính nhất quán dữ liệu nhạy cảm.'] }
+          ]
+        },
+        mq: {
+          title: 'MQ map vào ứng dụng thật',
+          summary: 'MQ quan trọng với mọi luồng async như email, invoice, settlement, webhook, sync downstream.',
+          examples: [
+            { icon: '🛒', app: 'Mua hàng', situation: 'Đặt đơn xong nhưng email/invoice xử lý chậm vì backlog.', points: ['API vẫn xanh nhưng business flow thực tế bị chậm.', 'Queue lag cần nhìn riêng.'] },
+            { icon: '🎫', app: 'Bán vé', situation: 'Thông báo giữ ghế và phát vé điện tử bị trễ.', points: ['Consumer throughput thấp sẽ làm user tưởng lỗi.', 'Không nên chỉ nhìn sync API.'] },
+            { icon: '🏭', app: 'ERP tích hợp', situation: 'Nhiều hệ thống nói chuyện qua message bus.', points: ['Cần idempotency, DLQ và lag monitoring.', 'Retry dễ sinh duplicate processing.'] }
+          ]
+        },
+        cdn: {
+          title: 'CDN / Network map vào ứng dụng thật',
+          summary: 'Quan trọng khi user phân tán nhiều vùng hoặc asset tĩnh nặng chiếm phần lớn trải nghiệm đầu trang.',
+          examples: [
+            { icon: '🛒', app: 'Mua hàng toàn quốc', situation: 'Ảnh sản phẩm, JS và CSS phải tới user nhanh ở nhiều vùng.', points: ['CDN hit thấp sẽ kéo origin quá tải.', 'TTFB tốt giúp perceived speed tốt hơn rõ.'] },
+            { icon: '🎫', app: 'Mua vé sự kiện', situation: 'Nhiều người cùng tải UI và sơ đồ ghế.', points: ['TLS handshake và edge cache rất đáng đo.', 'Phù hợp để ghép với spike test.'] },
+            { icon: '📺', app: 'Livestream', situation: 'User vào đông từ nhiều khu vực khác nhau.', points: ['Network jitter ảnh hưởng nhiều tới cảm nhận.', 'Không chỉ backend quyết định tốc độ.'] }
+          ]
+        },
+        infra: {
+          title: 'Infrastructure map vào ứng dụng thật',
+          summary: 'Đây là lớp trả lời xem hệ thống có được provision đúng chưa và gãy do tài nguyên hay do code.',
+          examples: [
+            { icon: '🛒', app: 'Flash sale', situation: 'CPU và RAM trên node nóng nhanh lúc campaign mở.', points: ['Cgroup limit sai có thể throttle trước cả khi code xấu lộ ra.', 'Phải nhìn cả disk và swap.'] },
+            { icon: '🏢', app: 'ERP', situation: 'Export lớn làm disk I/O và memory tăng mạnh.', points: ['Bottleneck có thể nằm ở hạ tầng chứ không phải business logic.', 'Need observe iowait và disk throughput.'] },
+            { icon: '🎮', app: 'Realtime room', situation: 'Connection đông kéo pressure lên node và LB.', points: ['OS limit và node sizing là nền móng.', 'Infra xấu sẽ kéo mọi layer xấu theo.'] }
+          ]
+        },
+        auth: {
+          title: 'Auth map vào ứng dụng thật',
+          summary: 'Auth hay thành điểm nghẽn trong login storm, brute-force, MFA hoặc token verification nặng.',
+          examples: [
+            { icon: '🛒', app: 'Mua hàng', situation: 'User đăng nhập đồng loạt đúng lúc flash sale bắt đầu.', points: ['Login latency cao ảnh hưởng conversion trực tiếp.', 'Hash cost và token cache là trọng tâm.'] },
+            { icon: '🏦', app: 'Ngân hàng', situation: 'Đầu giờ sáng lượng login và OTP validation tăng cùng lúc.', points: ['Đây là đường nhạy cảm cả về UX lẫn security.', 'Auth fail storm có thể kéo toàn app chậm theo.'] },
+            { icon: '🎓', app: 'LMS', situation: 'Sinh viên đăng nhập đồng loạt trước giờ thi.', points: ['Rate limit, session cache, token verify đều đáng test.', 'Auth chậm bị user thấy ngay lập tức.'] }
+          ]
+        },
+        websocket: {
+          title: 'WebSocket map vào ứng dụng thật',
+          summary: 'Rất hợp để học qua chat, room, seat availability, dashboard realtime, trading panel.',
+          examples: [
+            { icon: '💬', app: 'Chat / support', situation: 'Nhiều agent và khách giữ connection suốt ca làm.', points: ['Connection leak và reconnect storm rất hay xảy ra.', 'Cần nhìn open fd và drop rate.'] },
+            { icon: '🎫', app: 'Mua vé realtime', situation: 'Ghế trống được cập nhật theo thời gian thực.', points: ['Broadcast storm ăn CPU rất nhanh.', 'Payload và fan-out strategy rất quan trọng.'] },
+            { icon: '📈', app: 'Trading / dashboard', situation: 'Giá và trạng thái cập nhật liên tục.', points: ['Latency message phải thấp và ổn định.', 'Need cleanup lifecycle sạch.'] }
+          ]
+        },
+        search: {
+          title: 'Search map vào ứng dụng thật',
+          summary: 'Search cực quan trọng ở app có catalog lớn, filter phức tạp hoặc indexing liên tục.',
+          examples: [
+            { icon: '🛒', app: 'Catalog sản phẩm', situation: 'Search, filter, sort theo brand, giá, rating.', points: ['Wildcard và deep pagination rất dễ làm chậm.', 'Search ảnh hưởng trực tiếp browse UX.'] },
+            { icon: '🎬', app: 'Portal media', situation: 'User tìm phim, bài viết, creator, tag.', points: ['Index refresh, shard count và query shape cần tune kỹ.', 'Không chỉ relevance, performance cũng quyết định UX.'] },
+            { icon: '🏢', app: 'ERP / master data', situation: 'Tra cứu mã hàng, vendor, chứng từ khối lượng lớn.', points: ['Search lag làm productivity nội bộ giảm mạnh.', 'Nên tách workload search khỏi OLTP query thường.'] }
+          ]
+        }
+      },
+      api: {
+        api: {
+          title: 'API performance trong ứng dụng thật',
+          summary: 'API là nơi team backend và QA nhìn thấy rõ nhất mối liên hệ giữa request, downstream, lỗi và scale.',
+          examples: [
+            { icon: '🛒', app: 'Mua hàng', situation: 'User bấm mở trang sản phẩm, web phải gọi nhiều API phía sau.', points: ['Nếu API chậm, người dùng sẽ thấy trang xoay vòng rất lâu.', 'Cần nhìn cả API chính và downstream như giá, tồn kho, gợi ý.'] },
+            { icon: '🏦', app: 'Ngân hàng', situation: 'App mobile login xong phải lấy dashboard, tài khoản, giao dịch gần nhất.', points: ['Một API chậm có thể kéo cả màn hình đầu tiên bị đứng.', 'Error rate ở API sẽ bị user cảm nhận như app bị lỗi.'] },
+            { icon: '🏭', app: 'ERP / nội bộ', situation: 'Màn hình search hoặc save chứng từ gọi API liên tục ở giờ cao điểm.', points: ['API là lớp dễ đo nhất để so release trước và sau.', 'P95, timeout và rate limit giúp thấy sớm bottleneck.'] }
+          ]
+        }
+      }
+    };
+
+    const TOOLTIP_GLOSSARY = {
+      'P95': 'Percentile 95: 95% request nhanh hơn mức này. Đây là chỉ số phổ biến nhất để ra quyết định release.',
+      'P99': 'Percentile 99: soi nhóm request chậm nhất, hữu ích khi cần bắt outlier.',
+      'P50': 'Percentile 50: phản ánh trải nghiệm phổ thông của phần lớn người dùng.',
+      'P95 Response Time': 'Thời gian phản hồi ở mức percentile 95. Thường dùng làm ngưỡng SLA cho API.',
+      'Response Time': 'Thời gian từ lúc gửi request đến lúc nhận response.',
+      'Latency': 'Độ trễ khi hệ thống phản hồi một hành động hoặc request.',
+      'Throughput': 'Lượng request hoặc transaction hệ thống xử lý được trong một đơn vị thời gian.',
+      'Error Rate': 'Tỷ lệ request bị lỗi, timeout hoặc bị từ chối.',
+      'LCP': 'Largest Contentful Paint: chỉ số Core Web Vitals cho biết nội dung chính hiển thị nhanh đến đâu.',
+      'CLS': 'Cumulative Layout Shift: mức độ layout bị xô lệch trong lúc tải trang.',
+      'TTI': 'Time to Interactive: thời điểm user có thể tương tác mượt với trang.',
+      'TTFB': 'Time to First Byte: thời gian từ lúc request gửi đi tới lúc nhận byte đầu tiên.',
+      'QPS': 'Queries Per Second: số truy vấn database hoặc search xử lý mỗi giây.',
+      'RPS': 'Requests Per Second: số request API xử lý mỗi giây.',
+      'VU': 'Virtual User: người dùng ảo trong bài test tải.',
+      'Virtual Users': 'Người dùng ảo được dùng để mô phỏng nhiều session song song.',
+      'Avg RT': 'Average Response Time: thời gian phản hồi trung bình, chỉ nên dùng bổ trợ chứ không thay P95.',
+      'OLTP': 'Online Transaction Processing: nhóm nghiệp vụ giao dịch online cần phản hồi nhanh và ổn định.',
+      'MFA': 'Multi-Factor Authentication: xác thực nhiều bước, có thể thêm độ trễ vào luồng login.',
+      'API': 'Application Programming Interface: lớp giao tiếp giữa frontend, app mobile hoặc hệ thống khác với backend.',
+      'Scale Up': 'Tăng tài nguyên cho máy hoặc pod hiện có, ví dụ tăng CPU hoặc RAM.',
+      'Scale Down': 'Giảm tài nguyên hoặc giảm số instance khi tải giảm để tiết kiệm chi phí.'
+    };
+
+    function escapeTooltipText(text) {
+      return String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    function renderTooltipTerm(key, display = key) {
+      const description = TOOLTIP_GLOSSARY[key];
+      if (!description) return display;
+      return `<span class="tooltip-term" tabindex="0" data-tooltip="${escapeTooltipText(description)}">${display}</span>`;
+    }
+
+    function renderTooltipText(text) {
+      return TOOLTIP_GLOSSARY[text] ? renderTooltipTerm(text, text) : text;
+    }
+
+    const LEARNING_GUIDE = {
+      roadmap: {
+        level: 'Cơ bản',
+        watchFirst: ['Nắm chắc P95, Error Rate, Throughput trước khi học tool cụ thể.', 'Ưu tiên Smoke, Average và Database trước các layer ít gặp hơn.'],
+        commonMistakes: ['Nhảy vào tool quá sớm khi chưa hiểu metric.', 'Học quá nhiều layer cùng lúc nên mất trọng tâm.'],
+        note: 'Roadmap này dùng để định thứ tự học. Hãy đi từ câu hỏi business sang metric, rồi mới sang công cụ và tuning.'
+      },
+      theory: {
+        level: 'Cơ bản',
+        watchFirst: ['Phân biệt Average với P95/P99.', 'Hiểu VU, Throughput và Error Rate liên hệ với nhau thế nào.'],
+        commonMistakes: ['Chỉ nhìn average response time.', 'Đồng nhất số user với throughput hệ thống.'],
+        note: 'Nếu phần lý thuyết chưa chắc, các kết luận khi chạy load test rất dễ sai hướng.'
+      },
+      smoke: {
+        level: 'Cơ bản',
+        watchFirst: ['P95 của request cơ bản sau deploy.', 'Error Rate và tín hiệu startup bất thường.', 'Status tổng quát để quyết định có chặn release không.'],
+        commonMistakes: ['Biến smoke thành bài test quá nặng nên chậm feedback.', 'Bỏ qua health path quan trọng như login hoặc API cốt lõi.'],
+        note: 'Đây là điểm vào tốt nhất cho người mới vì bài test nhỏ, mục tiêu rõ và liên hệ trực tiếp với release gate.'
+      },
+      average: {
+        level: 'Cơ bản',
+        watchFirst: ['Baseline P95 ở traffic bình thường.', 'Error Rate ổn định qua nhiều lần chạy.', 'Virtual Users và Throughput để so regression giữa các release.'],
+        commonMistakes: ['Không lưu baseline cũ nên không chứng minh được regress.', 'Dùng user flow không giống production nên số đo thiếu giá trị.'],
+        note: 'Average Load Test là bài học tốt để hiểu baseline, regression và cách đọc kết quả một cách tỉnh táo.'
+      },
+      stress: {
+        level: 'Nâng cao',
+        watchFirst: ['Điểm P95 bắt đầu bẻ cong khi tăng tải.', 'Error Rate khi hệ thống bắt đầu degrade.', 'Dấu hiệu CPU, pool hoặc DB bị đẩy tới ngưỡng.'],
+        commonMistakes: ['Chạy stress khi chưa có baseline average.', 'Đẩy tải quá nhanh nên khó xác định điểm bắt đầu degrade.'],
+        note: 'Chỉ nên học stress sau khi đã quen với baseline, vì mục tiêu ở đây là hiểu dạng degrade chứ không chỉ nhìn pass/fail.'
+      },
+      spike: {
+        level: 'Nâng cao',
+        watchFirst: ['Latency spike ở giai đoạn traffic tăng đột ngột.', 'Error Rate hoặc queue backlog ngay sau khi burst.', 'Tốc độ hồi phục sau peak, không chỉ lúc peak xảy ra.'],
+        commonMistakes: ['Chỉ nhìn đỉnh spike mà quên khả năng recover.', 'Không gắn spike với cold start, scale-out hay queue backlog.'],
+        note: 'Spike Test rất hợp để dạy các câu chuyện ngoài đời như flash sale, livestream hoặc login storm.'
+      },
+      breakpoint: {
+        level: 'Nâng cao',
+        watchFirst: ['Ngưỡng tải nơi throughput dừng tăng.', 'Kiểu fail: graceful degrade hay hard crash.', 'Rate limit, max connection hoặc saturation signal đầu tiên.'],
+        commonMistakes: ['Tìm breakpoint mà không chuẩn bị guardrail rollback.', 'Chỉ ghi nhớ con số tối đa mà không ghi kiểu fail của hệ thống.'],
+        note: 'Mục tiêu của Breakpoint Test không phải phá cho vui mà là biết hệ thống gãy ở đâu và gãy như thế nào.'
+      },
+      soak: {
+        level: 'Nâng cao',
+        watchFirst: ['Drift của latency theo thời gian.', 'Memory, connection hoặc disk growth kéo dài.', 'Error Rate nhỏ nhưng tăng đều sau thời gian dài.'],
+        commonMistakes: ['Chạy soak quá ngắn nên không lộ leak.', 'Chỉ nhìn cuối bài test mà không xem trend theo thời gian.'],
+        note: 'Soak Test dạy người học kiên nhẫn: vấn đề chậm rãi thường không lộ ra trong các bài test ngắn.'
+      },
+      frontend: {
+        level: 'Cơ bản',
+        watchFirst: ['P95 Render hoặc LCP tương ứng với trải nghiệm người dùng.', 'FPS và dấu hiệu main thread bị block.', 'Error nhỏ nhưng lặp lại ở render path quan trọng.'],
+        commonMistakes: ['Chỉ tối ưu API mà quên frontend vẫn lag.', 'Đo web performance nhưng bỏ qua asset và script third-party.'],
+        note: 'Frontend là layer rất dễ dạy vì người học nhìn thấy tác động trực tiếp lên cảm nhận người dùng.'
+      },
+      database: {
+        level: 'Cơ bản',
+        watchFirst: ['P95 Query để phát hiện truy vấn chậm.', 'QPS khi traffic tăng để xem DB có phải bottleneck thật không.', 'Error hoặc lock signal khi transaction bắt đầu va chạm.'],
+        commonMistakes: ['Đổ lỗi DB mà không xem query plan.', 'Tăng connection pool để che truy vấn tệ.'],
+        note: 'Nếu chỉ chọn một layer hệ thống để dạy sớm, Database gần như luôn đáng ưu tiên nhất.'
+      },
+      cache: {
+        level: 'Cơ bản',
+        watchFirst: ['Hit Rate trước khi nhìn latency.', 'Miss/Error khi key hoặc TTL có vấn đề.', 'P95 chỉ để xác nhận cache thực sự đang giúp hệ thống nhanh hơn.'],
+        commonMistakes: ['Thấy cache có là nghĩ chắc chắn nhanh.', 'Set TTL đồng loạt khiến stampede và DB spike.'],
+        note: 'Cache là layer cho người mới thấy rất rõ việc một optimization đúng hoặc sai có thể thay đổi cả hệ thống ra sao.'
+      },
+      mq: {
+        level: 'Nâng cao',
+        watchFirst: ['Queue Lag thay vì chỉ nhìn API response.', 'Latency của message end-to-end.', 'Error hoặc retry tăng khi consumer hụt hơi.'],
+        commonMistakes: ['API trả 200 nên tưởng business flow đã xong.', 'Không tách throughput producer và consumer khi phân tích.'],
+        note: 'MQ phù hợp khi người học đã quen tư duy bất đồng bộ và biết phân biệt technical success với business completion.'
+      },
+      cdn: {
+        level: 'Nâng cao',
+        watchFirst: ['TTFB ở edge hit path.', 'Cache hit tại CDN trước khi đổ lỗi origin.', 'Độ lệch vùng hoặc network path khi user phân tán.'],
+        commonMistakes: ['Test CDN chỉ từ một vị trí mạng.', 'Bỏ qua TLS handshake và asset delivery khi phân tích web performance.'],
+        note: 'CDN/Network nên học sau khi đã chắc frontend và backend, vì đây là lớp nhiều yếu tố môi trường hơn.'
+      },
+      infra: {
+        level: 'Nâng cao',
+        watchFirst: ['CPU, memory và disk pressure đi kèm với latency.', 'Signal throttling, iowait hoặc cgroup limit.', 'Status tổng thể khi node bắt đầu mất headroom.'],
+        commonMistakes: ['Tối ưu code khi bottleneck thật nằm ở tài nguyên.', 'Chỉ nhìn CPU mà bỏ qua disk và memory pressure.'],
+        note: 'Infra là lớp giúp người học phân biệt rõ lỗi do code với lỗi do capacity hoặc provisioning.'
+      },
+      auth: {
+        level: 'Nâng cao',
+        watchFirst: ['Login P95 hoặc token validation latency.', 'Error tăng khi login storm hoặc rate limit xảy ra.', 'Tác động của hash cost, token cache và dependency ngoài.'],
+        commonMistakes: ['Xem auth như endpoint bình thường dù nó nhạy cả về UX lẫn security.', 'Bỏ qua login storm và brute-force style traffic.'],
+        note: 'Auth thường không phải bài đầu tiên cho người mới, nhưng rất giá trị khi cần gắn performance với đường đi business nhạy cảm.'
+      },
+      websocket: {
+        level: 'Nâng cao',
+        watchFirst: ['Số connection sống và độ ổn định khi reconnect.', 'Latency message hoặc fan-out cost.', 'Error/drop rate khi connection lifecycle có vấn đề.'],
+        commonMistakes: ['Chỉ đo request-response như HTTP.', 'Không theo dõi file descriptor, reconnect storm và cleanup lifecycle.'],
+        note: 'WebSocket nên để sau vì nó yêu cầu tư duy connection lifecycle và realtime behavior.'
+      },
+      search: {
+        level: 'Nâng cao',
+        watchFirst: ['P95 search query ở các filter phổ biến.', 'Error hoặc timeout khi wildcard/deep pagination xuất hiện.', 'Tác động của indexing hoặc refresh interval tới trải nghiệm tìm kiếm.'],
+        commonMistakes: ['Tối ưu relevance mà quên performance.', 'Không phân tách query path của search khỏi workload OLTP thông thường.'],
+        note: 'Search phù hợp để dạy sau vì vừa có query complexity vừa có index lifecycle, dễ làm người mới bị ngợp nếu vào quá sớm.'
+      },
+      api: {
+        level: 'Cơ bản',
+        watchFirst: ['Nhìn P95 của API chính trước.', 'Kiểm tra Error Rate để biết user có đang bị fail thật không.', 'So RPS và status để xem hệ thống đang chịu tải tốt hay chỉ đang trả chậm.'],
+        commonMistakes: ['Kết luận API chậm mà không kiểm tra downstream như DB hoặc cache.', 'Chỉ nhìn status code 200 mà bỏ qua latency quá cao.'],
+        note: 'API là điểm học rất tốt cho người mới vì nó nối trực tiếp trải nghiệm user với backend và dễ liên hệ bằng số liệu rõ ràng.'
+      }
+    };
+
+    function getLearningGuide(id) {
+      return LEARNING_GUIDE[id] || { level: 'Cơ bản', watchFirst: [], commonMistakes: [], note: '' };
+    }
+
+    function renderLevelBadge(id) {
+      const guide = getLearningGuide(id);
+      const tone = guide.level === 'Nâng cao' ? 'advanced' : 'basic';
+      return `<span class="learning-badge ${tone}">${guide.level}</span>`;
+    }
+
+    function renderGuideBlock(id) {
+      const guide = getLearningGuide(id);
+      return `
+        <details class="guide-card guide-collapsible">
+          <summary class="guide-summary">
+            <div class="guide-head" style="flex:1;">
+              <div class="guide-title">
+                <div class="section-kicker">Learning Guide</div>
+                <strong>Dành cho người học</strong>
+                <div class="guide-copy">Nhấn để xem metric nên nhìn trước và lỗi hay gặp.</div>
+              </div>
+              ${renderLevelBadge(id)}
+            </div>
+            <span class="guide-toggle-icon">+</span>
+          </summary>
+          <div class="guide-content">
+            <div class="guide-block">
+              <div class="guide-label">Metric nhìn trước</div>
+              <ul class="guide-list">${guide.watchFirst.map(item => `<li>${item}</li>`).join('')}</ul>
+            </div>
+            <div class="guide-block">
+              <div class="guide-label">Lỗi hay gặp</div>
+              <ul class="guide-list">${guide.commonMistakes.map(item => `<li>${item}</li>`).join('')}</ul>
+            </div>
+            ${guide.note ? `<div class="guide-note">${guide.note}</div>` : ''}
+          </div>
+        </details>
+      `;
+    }
+
+    const ROADMAP_HTML = `
+      <div class="content-grid">
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Roadmap</div>
+            <div class="section-line"></div>
+          </div>
+          <div class="path-grid">
+            <article class="phase-card">
+              <div class="eyebrow">Phase 1</div>
+              <h2>Nền tảng đo lường</h2>
+              <ul>
+                <li>Hiểu rõ <strong>Latency</strong>, <strong>Throughput</strong>, <strong>Error Rate</strong>, <strong>P95</strong>, <strong>P99</strong>.</li>
+                <li>Phân biệt đúng <strong>Smoke</strong>, <strong>Load</strong>, <strong>Stress</strong>, <strong>Spike</strong>, <strong>Breakpoint</strong>, <strong>Soak</strong>.</li>
+                <li>Biết viết script cơ bản bằng <strong>k6</strong> hoặc <strong>JMeter</strong>.</li>
+                <li>Biết lấy baseline và so sánh regression sau mỗi release.</li>
+              </ul>
+            </article>
+            <article class="phase-card">
+              <div class="eyebrow">Phase 2</div>
+              <h2>Đi sâu từng layer</h2>
+              <ul>
+                <li>Phân tích bottleneck theo <strong>Frontend</strong>, <strong>Database</strong>, <strong>Cache</strong>, <strong>Queue</strong>, <strong>Network</strong>.</li>
+                <li>Đọc <strong>EXPLAIN ANALYZE</strong>, hiểu <strong>Cache Hit Rate</strong>, <strong>Consumer Lag</strong>, <strong>Cold Start</strong>.</li>
+                <li>Kết hợp số liệu app, infra và <strong>APM</strong> thay vì nhìn 1 metric đơn lẻ.</li>
+                <li>Tối ưu theo root cause, không vá cảm tính.</li>
+              </ul>
+            </article>
+            <article class="phase-card">
+              <div class="eyebrow">Phase 3</div>
+              <h2>Production mastery</h2>
+              <ul>
+                <li>Đưa performance test vào <strong>CI/CD</strong> bằng threshold và release gate.</li>
+                <li>Dùng <strong>Distributed Tracing</strong> để nối request từ edge đến downstream service.</li>
+                <li>Bổ sung <strong>Chaos Engineering</strong> cho kịch bản dependency fail và retry storm.</li>
+                <li>Tối ưu cả performance, resilience và cost.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Impact Map</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>Ưu tiên học theo layer hệ thống</h3>
+          <div class="layer-grid">
+            <div class="layer-link"><div class="card-head-inline"><h3>🗄️ Database</h3>${renderLevelBadge('database')}</div><p>Ảnh hưởng mạnh nhất tới API backend: query chậm, lock contention, pool exhausted, index sai.</p><span class="tag bad">High Impact</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="database">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>⚡ Cache</h3>${renderLevelBadge('cache')}</div><p>Tăng hiệu năng nhanh nhưng dễ dính <strong>Stampede</strong>, cache miss, eviction sai và stale data.</p><span class="tag warn">High Impact</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="cache">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>🖥️ Frontend</h3>${renderLevelBadge('frontend')}</div><p>User cảm nhận chậm chủ yếu ở <strong>LCP</strong>, <strong>CLS</strong>, <strong>TTI</strong>, không chỉ ở API.</p><span class="tag warn">High Impact</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="frontend">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>📦 Message Queue</h3>${renderLevelBadge('mq')}</div><p>Khi async path nghẽn, backlog tăng kéo theo delay business flow dù API vẫn trả 200.</p><span class="tag info">Mid Impact</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="mq">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>🌍 CDN / Network</h3>${renderLevelBadge('cdn')}</div><p>Ảnh hưởng lớn đến người dùng đa vùng: <strong>TTFB</strong>, TLS handshake, cache hit ở edge.</p><span class="tag info">Mid Impact</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="cdn">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>🔐 Auth</h3>${renderLevelBadge('auth')}</div><p>Login và token validation thường là hotspot khi burst traffic hoặc brute-force storm.</p><span class="tag info">Mid Impact</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="auth">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>🖥️ Infrastructure</h3>${renderLevelBadge('infra')}</div><p>CPU throttling, memory pressure, disk I/O, swap, cgroup limit có thể làm mọi layer còn lại xấu đi.</p><span class="tag info">Mid Impact</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="infra">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>🔌 WebSocket</h3>${renderLevelBadge('websocket')}</div><p>Realtime cần quan tâm connection lifecycle, fan-out cost và file descriptor leak.</p><span class="tag">Focused Layer</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="websocket">🧭 Use case</button></div></div>
+            <div class="layer-link"><div class="card-head-inline"><h3>🔎 Search</h3>${renderLevelBadge('search')}</div><p>Search dễ chậm vì wildcard, deep pagination, refresh interval và segment merge không hợp lý.</p><span class="tag">Focused Layer</span><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="layer" data-usecase-target="search">🧭 Use case</button></div></div>
+          </div>
+        </section>
+
+        <section class="table-card">
+          <div class="section-header">
+            <div class="section-kicker">Thresholds</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>Reference ngưỡng production</h3>
+          <table class="metric-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Đẹp</th>
+                <th>Cảnh báo</th>
+                <th>Nguy hiểm</th>
+                <th>Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>${renderTooltipTerm('P95 Response Time', 'P95 Response Time')}</strong></td><td>&lt; 300ms</td><td>300-800ms</td><td>&gt; 800ms</td><td>${renderTooltipTerm('API', 'API')} thường dùng cho nghiệp vụ ${renderTooltipTerm('OLTP', 'OLTP')}</td></tr>
+              <tr><td><strong>${renderTooltipTerm('Error Rate', 'Error Rate')}</strong></td><td>&lt; 0.5%</td><td>0.5-2%</td><td>&gt; 2%</td><td>Tính cả timeout và 5xx</td></tr>
+              <tr><td><strong>${renderTooltipTerm('LCP', 'LCP')}</strong></td><td>&lt; 2.5s</td><td>2.5-4s</td><td>&gt; 4s</td><td>Core Web Vitals</td></tr>
+              <tr><td><strong>DB Query ${renderTooltipTerm('P95', 'P95')}</strong></td><td>&lt; 50ms</td><td>50-200ms</td><td>&gt; 200ms</td><td>Read-heavy query</td></tr>
+              <tr><td><strong>Cache Hit Rate</strong></td><td>&gt; 90%</td><td>75-90%</td><td>&lt; 75%</td><td>Redis / in-memory cache</td></tr>
+              <tr><td><strong>CPU Utilization</strong></td><td>&lt; 60%</td><td>60-80%</td><td>&gt; 80%</td><td>Sustained average, không tính burst ngắn</td></tr>
+              <tr><td><strong>Memory Usage</strong></td><td>&lt; 70%</td><td>70-85%</td><td>&gt; 85%</td><td>Alert từ 80%</td></tr>
+              <tr><td><strong>Queue Lag</strong></td><td>&lt; 100</td><td>100-1000</td><td>&gt; 1000</td><td>Tùy domain mà SLA sẽ khác</td></tr>
+              <tr><td><strong>CDN ${renderTooltipTerm('TTFB', 'TTFB')}</strong></td><td>&lt; 50ms</td><td>50-200ms</td><td>&gt; 200ms</td><td>Với edge cache hit</td></tr>
+              <tr><td><strong>Login ${renderTooltipTerm('P95', 'P95')}</strong></td><td>&lt; 200ms</td><td>200-500ms</td><td>&gt; 500ms</td><td>Không tính ${renderTooltipTerm('MFA', 'MFA')} step ngoài hệ thống</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Toolchain</div>
+            <div class="section-line"></div>
+          </div>
+          <div class="tool-grid">
+            <article class="tool-card"><h3>⚡ <strong>k6</strong></h3><p>Phù hợp với developer, viết test bằng JavaScript, threshold rõ ràng, dễ nhét vào pipeline.</p></article>
+            <article class="tool-card"><h3>📊 <strong>JMeter</strong></h3><p>Mạnh về giao thức, plugin nhiều, hợp với team QA cần record và manage test plan lớn.</p></article>
+            <article class="tool-card"><h3>📈 <strong>Prometheus</strong> + <strong>Grafana</strong></h3><p>Stack giám sát gần như tiêu chuẩn để nhìn app, infra, business metrics theo cùng timeline.</p></article>
+            <article class="tool-card"><h3>🧭 <strong>Tempo</strong> / <strong>Jaeger</strong></h3><p>Dùng cho <strong>Distributed Tracing</strong>, tìm xem request chậm ở service nào và span nào.</p></article>
+            <article class="tool-card"><h3>🔍 <strong>EXPLAIN ANALYZE</strong></h3><p>Không đọc được query plan thì rất dễ tối ưu sai chỗ ở database.</p></article>
+            <article class="tool-card"><h3>🧪 <strong>Lighthouse CI</strong></h3><p>Đưa web performance vào pipeline, bắt regression ở <strong>LCP</strong>, <strong>CLS</strong>, <strong>TBT</strong>.</p></article>
+            <article class="tool-card"><h3>🔥 <strong>py-spy</strong> / <strong>clinic.js</strong></h3><p>Profiler an toàn hơn cho môi trường thật, hỗ trợ flame graph và hotspot CPU.</p></article>
+            <article class="tool-card"><h3>📦 <strong>Locust</strong></h3><p>Hợp với team Python cần mô tả user behavior bằng code, scale worker tương đối dễ.</p></article>
+            <article class="tool-card"><h3>☁️ <strong>Grafana Cloud</strong></h3><p>Khi cần distributed load nhanh mà không muốn tự quản toàn bộ hạ tầng test.</p></article>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Completeness</div>
+            <div class="section-line"></div>
+          </div>
+          <div class="pitfall-grid">
+            <article class="pitfall-card"><h3>⚠️ Lỗi phổ biến</h3><p>Dùng average thay cho percentile, test trên localhost, không có baseline, bỏ qua monitoring.</p></article>
+            <article class="pitfall-card"><h3>🚪 <strong>CI/CD</strong> Gates</h3><p>Thiết lập threshold như P95 không tăng quá 10%, error không vượt 1%, hoặc block release nếu <strong>Lighthouse</strong> tụt ngưỡng.</p></article>
+            <article class="pitfall-card"><h3>🔭 <strong>Observability</strong></h3><p>Ghép metrics, logs, traces lại với nhau để tìm root cause nhanh hơn thay vì đoán từ biểu đồ response time.</p></article>
+            <article class="pitfall-card"><h3>💥 <strong>Chaos Engineering</strong></h3><p>Sau khi nắm load test cơ bản, hãy tập thêm dependency timeout, network loss, pod crash, retry storm và circuit breaker behavior.</p></article>
+          </div>
+        </section>
+      </div>
+    `;
+
+    const THEORY_HTML = `
+      <div class="content-grid">
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Foundation</div>
+            <div class="section-line"></div>
+          </div>
+          <h2><strong>Load Testing</strong> là gì?</h2>
+          <p><strong>Load Testing</strong> là quá trình mô phỏng lưu lượng thực tế hoặc gần thực tế để đo <strong>Performance</strong>, <strong>Stability</strong> và <strong>Scalability</strong> của hệ thống trước khi sự cố xảy ra ngoài production.</p>
+          <div class="analogy-box">
+            <h3>Ví dụ dễ hình dung</h3>
+            <p>Hãy xem hệ thống như một nhà hàng. Ngày thường có 20 khách, cuối tuần có 100 khách, dịp đặc biệt có 400 khách vào cùng lúc. Nếu không thử tải trước, bạn sẽ chỉ biết hệ thống chịu nổi hay không sau khi người dùng thật đã bị ảnh hưởng.</p>
+          </div>
+          <div class="highlight-box">
+            <h3>Vì sao cần làm sớm?</h3>
+            <ul>
+              <li>Response chậm hơn vài trăm mili giây có thể giảm conversion, đặc biệt ở luồng thanh toán hoặc login.</li>
+              <li>Tìm bottleneck sớm rẻ hơn rất nhiều so với fix khi release đã lên production.</li>
+              <li>Biết giới hạn hệ thống giúp team sizing infra và plan auto-scaling đúng hơn.</li>
+              <li>Giúp team tự tin hơn khi chuẩn bị campaign lớn, peak season hoặc release lớn.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="table-card">
+          <div class="section-header">
+            <div class="section-kicker">Core Metrics</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>Thuật ngữ bắt buộc phải hiểu</h3>
+          <table class="metric-table">
+            <thead>
+              <tr>
+                <th>Thuật ngữ</th>
+                <th>Ý nghĩa</th>
+                <th>Điểm cần nhớ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>${renderTooltipTerm('Virtual Users', 'Virtual Users')}</strong></td><td>Người dùng ảo mô phỏng nhiều session song song.</td><td>Không phải cứ nhiều ${renderTooltipTerm('VU', 'VU')} là throughput cao hơn nếu hệ thống đã nghẽn.</td></tr>
+              <tr><td><strong>${renderTooltipTerm('Response Time', 'Response Time')}</strong></td><td>Thời gian từ lúc gửi request đến lúc nhận response.</td><td>Luôn xem theo percentile, không chỉ nhìn average.</td></tr>
+              <tr><td><strong>${renderTooltipTerm('Throughput', 'Throughput')}</strong></td><td>Số request hoặc transaction xử lý trong một đơn vị thời gian.</td><td>Response time đẹp mà throughput thấp thì cũng chưa đủ tốt.</td></tr>
+              <tr><td><strong>${renderTooltipTerm('Error Rate', 'Error Rate')}</strong></td><td>Tỷ lệ request fail, timeout, 5xx hoặc reject bởi hệ thống.</td><td>Error thấp nhưng latency quá cao vẫn là trải nghiệm tệ.</td></tr>
+              <tr><td><strong>Ramp-up</strong> / <strong>Ramp-down</strong></td><td>Tăng hoặc giảm tải dần theo thời gian.</td><td>Giúp mô phỏng gần hành vi thực và tránh shock load phi thực tế.</td></tr>
+              <tr><td><strong>${renderTooltipTerm('P50', 'P50')} / ${renderTooltipTerm('P95', 'P95')} / ${renderTooltipTerm('P99', 'P99')}</strong></td><td>Phân vị hiệu năng thay vì trung bình cộng.</td><td><strong>${renderTooltipTerm('P95', 'P95')}</strong> thường là metric quan trọng nhất cho SLA.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="table-card">
+          <div class="section-header">
+            <div class="section-kicker">Percentile</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>So sánh <strong>${renderTooltipTerm('P50', 'P50')}</strong>, <strong>${renderTooltipTerm('P95', 'P95')}</strong>, <strong>${renderTooltipTerm('P99', 'P99')}</strong></h3>
+          <table class="metric-table">
+            <thead>
+              <tr><th>Metric</th><th>Diễn giải</th><th>Khi dùng</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>${renderTooltipTerm('P50', 'P50')}</strong></td><td>50% request nhanh hơn mức này.</td><td>Xem trải nghiệm phổ thông của phần lớn user.</td></tr>
+              <tr><td><strong>${renderTooltipTerm('P95', 'P95')}</strong></td><td>95% request nhanh hơn mức này.</td><td>Dùng làm ngưỡng release và SLA thường xuyên nhất.</td></tr>
+              <tr><td><strong>${renderTooltipTerm('P99', 'P99')}</strong></td><td>99% request nhanh hơn mức này.</td><td>Để soi outlier và nhóm user bị ảnh hưởng nặng.</td></tr>
+              <tr><td>Average</td><td>Trung bình cộng.</td><td>Chỉ dùng bổ trợ, không dùng một mình để kết luận.</td></tr>
+            </tbody>
+          </table>
+          <div class="analogy-box">
+            <h3>Ví dụ trực giác</h3>
+            <p>Nếu average là 250ms nhưng <strong>${renderTooltipTerm('P95', 'P95')}</strong> là 1.2s, nghĩa là số đông thấy ổn nhưng 5% người dùng chờ rất lâu. Chính 5% này thường là chỗ gây complaint và mất conversion.</p>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Workflow</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>Quy trình làm performance test đúng thứ tự</h3>
+          <div class="flow-diagram">
+            <div class="flow-step">1. Define Goal</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">2. Build Script</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">3. Run Baseline</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">4. Monitor Full Stack</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">5. Analyze Root Cause</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">6. Fix & Verify</div>
+          </div>
+          <ol style="margin-top:16px;">
+            <li>Đặt mục tiêu rõ: <strong>${renderTooltipTerm('P95', 'P95')}</strong>, ${renderTooltipTerm('Error Rate', 'error rate')}, số concurrent user hoặc target ${renderTooltipTerm('Throughput', 'throughput')}.</li>
+            <li>Viết script mô phỏng user flow thật, không chỉ ping một endpoint vô nghĩa.</li>
+            <li>Chạy baseline với tải nhỏ để kiểm tra script, dữ liệu và môi trường.</li>
+            <li>Theo dõi CPU, memory, disk, network, DB, queue, cache, ${renderTooltipTerm('API', 'API')} và application metrics cùng lúc.</li>
+            <li>Phân tích root cause bằng evidence, không tối ưu mù.</li>
+            <li>Chạy lại cùng kịch bản sau khi fix để xác nhận hiệu quả thực.</li>
+          </ol>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Test Types</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>6 loại test bạn cần nắm theo đúng câu hỏi business</h3>
+          <div class="test-grid">
+            <article class="test-card"><div class="card-head-inline"><h3>✅ <strong>Smoke Test</strong></h3>${renderLevelBadge('smoke')}</div><p>Xác nhận deploy mới còn sống, không crash, không timeout bất thường.</p><p><strong>Khi dùng:</strong> Sau deploy, sau hotfix, trước khi chạy test lớn.</p><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="load" data-usecase-target="smoke">🧭 Use case</button></div></article>
+            <article class="test-card"><div class="card-head-inline"><h3>📊 <strong>Average Load Test</strong></h3>${renderLevelBadge('average')}</div><p>Mô phỏng traffic bình thường để lấy baseline và so regression.</p><p><strong>Khi dùng:</strong> Hàng ngày, hàng tuần, trước release chuẩn.</p><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="load" data-usecase-target="average">🧭 Use case</button></div></article>
+            <article class="test-card"><div class="card-head-inline"><h3>⚡ <strong>Stress Test</strong></h3>${renderLevelBadge('stress')}</div><p>Đẩy cao hơn traffic thường để xem hệ thống degrade thế nào.</p><p><strong>Khi dùng:</strong> Trước campaign hoặc peak season.</p><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="load" data-usecase-target="stress">🧭 Use case</button></div></article>
+            <article class="test-card"><div class="card-head-inline"><h3>🚨 <strong>Spike Test</strong></h3>${renderLevelBadge('spike')}</div><p>Cho traffic tăng đột ngột để đánh giá auto-scaling, queue, cold start, circuit breaker.</p><p><strong>Khi dùng:</strong> Event, livestream, flash sale, campaign.</p><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="load" data-usecase-target="spike">🧭 Use case</button></div></article>
+            <article class="test-card"><div class="card-head-inline"><h3>🔍 <strong>Breakpoint Test</strong></h3>${renderLevelBadge('breakpoint')}</div><p>Tìm giới hạn và cách fail của hệ thống khi vượt sức chịu đựng.</p><p><strong>Khi dùng:</strong> Capacity planning và resilience review.</p><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="load" data-usecase-target="breakpoint">🧭 Use case</button></div></article>
+            <article class="test-card"><div class="card-head-inline"><h3>⏱️ <strong>Soak Test</strong></h3>${renderLevelBadge('soak')}</div><p>Giữ tải ổn định lâu để soi memory leak, connection leak, disk growth, degradation chậm.</p><p><strong>Khi dùng:</strong> Trước production hoặc sau thay đổi kiến trúc lớn.</p><div class="card-actions"><button class="context-btn compact" type="button" data-usecase-kind="load" data-usecase-target="soak">🧭 Use case</button></div></article>
+          </div>
+        </section>
+
+        <section class="table-card">
+          <div class="section-header">
+            <div class="section-kicker">Decision Matrix</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>Chọn loại test nào cho từng tình huống</h3>
+          <table class="metric-table">
+            <thead>
+              <tr><th>Tình huống</th><th>Nên chạy</th><th>Mục tiêu</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Deploy mới, vừa merge code lớn</td><td><strong>Smoke Test</strong></td><td>Phát hiện fail sớm, stop pipeline ngay</td></tr>
+              <tr><td>Muốn có baseline trước release</td><td><strong>Average Load Test</strong></td><td>So sánh trước và sau release</td></tr>
+              <tr><td>Sắp có campaign marketing</td><td><strong>Stress Test</strong> + <strong>Spike Test</strong></td><td>Đánh giá peak load và khả năng scale</td></tr>
+              <tr><td>Muốn biết ngưỡng chịu đựng tối đa</td><td><strong>Breakpoint Test</strong></td><td>Tìm điểm fail và hình thức fail</td></tr>
+              <tr><td>Nghi memory leak hoặc degradation chậm</td><td><strong>Soak Test</strong></td><td>Quan sát drift theo thời gian</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Practice Rules</div>
+            <div class="section-line"></div>
+          </div>
+          <div class="decision-grid">
+            <article class="decision-card"><h3>✅ Nên làm</h3><ul><li>Dùng data thực tế hoặc gần production.</li><li>Có baseline và lưu kết quả.</li><li>Monitor đủ app, DB, infra, cache, queue.</li><li>Đưa ngưỡng vào <strong>CI/CD</strong>.</li><li>Chạy lại sau khi fix.</li></ul></article>
+            <article class="decision-card"><h3>❌ Không nên</h3><ul><li>Test trên localhost rồi suy ra production.</li><li>Chỉ nhìn average response time.</li><li>Tăng RAM để che memory leak.</li><li>Đổi nhiều biến cùng lúc.</li><li>Bỏ qua user flow thật.</li></ul></article>
+            <article class="decision-card"><h3>➕ Bổ sung nâng cao</h3><ul><li>Thêm <strong>Chaos Engineering</strong> khi đã có nền tảng load test tốt.</li><li>Dùng <strong>Distributed Tracing</strong> khi hệ thống có nhiều service.</li><li>Theo dõi cost per throughput khi scale lớn.</li></ul></article>
+          </div>
+        </section>
+      </div>
+    `;
+
+    const PRACTICE_HTML = `
+      <div class="content-grid">
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Practice Path</div>
+            <div class="section-line"></div>
+          </div>
+          <h2>Một người dùng thật đi qua hệ thống như thế nào?</h2>
+          <p>Tab này dùng ngôn ngữ đời thường để bạn tập nhìn performance như một câu chuyện. User mở web, web gọi ${renderTooltipTerm('API', 'API')}, API trả về nhanh hay chậm, lỗi có tăng không, rồi team quyết định ${renderTooltipTerm('Scale Up', 'scale up')} hay ${renderTooltipTerm('Scale Down', 'scale down')} ra sao.</p>
+          <div class="practice-grid" style="margin-top:16px;">
+            <div class="practice-card">
+              <h3>Luồng người dùng</h3>
+              <div class="practice-flow">
+                <div class="practice-flow-item"><div class="practice-flow-icon">1</div><div class="practice-flow-copy"><strong>User mở trang web</strong><span>Browser tải HTML, CSS, JS và bắt đầu gọi API để lấy dữ liệu.</span></div></div>
+                <div class="practice-flow-item"><div class="practice-flow-icon">2</div><div class="practice-flow-copy"><strong>API trả dữ liệu</strong><span>Trang sản phẩm cần giá, tồn kho, khuyến mãi và đánh giá. Một API chậm có thể kéo cả trang chậm theo.</span></div></div>
+                <div class="practice-flow-item"><div class="practice-flow-icon">3</div><div class="practice-flow-copy"><strong>Team nhìn số</strong><span>Nhìn ${renderTooltipTerm('P95', 'P95')}, ${renderTooltipTerm('Error Rate', 'Error Rate')} và tình trạng backend để biết chậm thật hay chỉ là vài request lẻ tẻ.</span></div></div>
+                <div class="practice-flow-item"><div class="practice-flow-icon">4</div><div class="practice-flow-copy"><strong>Team thử scale</strong><span>Nếu tải tăng, team thử tăng instance hoặc tài nguyên để xem hệ thống có phục hồi không.</span></div></div>
+              </div>
+            </div>
+            <div class="practice-card">
+              <h3>3 số cần nhìn đầu tiên</h3>
+              <div class="practice-metrics">
+                <div class="practice-metric-chip">${renderTooltipTerm('P95', 'P95')} = 420ms</div>
+                <div class="practice-metric-chip">${renderTooltipTerm('Error Rate', 'Error Rate')} = 1.8%</div>
+                <div class="practice-metric-chip">${renderTooltipTerm('RPS', 'RPS')} = 230</div>
+                <div class="practice-metric-chip">${renderTooltipTerm('LCP', 'LCP')} = 3.1s</div>
+              </div>
+              <div class="practice-language">
+                <p><strong>Cách nói non-tech:</strong> Trang vẫn mở được nhưng hơi chậm, và cứ khoảng 100 request thì có gần 2 request bị lỗi hoặc timeout.</p>
+                <p><strong>Cách nói technical:</strong> ${renderTooltipTerm('P95', 'P95')} vượt target, ${renderTooltipTerm('Error Rate', 'Error Rate')} bắt đầu có ý nghĩa, và frontend cũng bị kéo theo vì ${renderTooltipTerm('LCP', 'LCP')} đã xấu hơn mức đẹp.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Walkthrough</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>Thực hành đọc kết quả từng bước</h3>
+          <div class="practice-steps">
+            <article class="practice-step">
+              <h3>1. User vào web</h3>
+              <p>Nhìn xem trang chính có vào được nhanh không. Với web, đừng chỉ nhìn backend, hãy nhìn thêm ${renderTooltipTerm('LCP', 'LCP')} để biết user thấy nội dung chính nhanh hay chậm.</p>
+            </article>
+            <article class="practice-step">
+              <h3>2. Web gọi API</h3>
+              <p>Trang thường gọi nhiều ${renderTooltipTerm('API', 'API')} song song. Nếu 1 API chậm thì cả màn hình có thể vẫn chậm. Lúc này nhìn ${renderTooltipTerm('P95', 'P95')} và ${renderTooltipTerm('Error Rate', 'Error Rate')} của API trước.</p>
+            </article>
+            <article class="practice-step">
+              <h3>3. Nếu lỗi tăng</h3>
+              <p>Nếu ${renderTooltipTerm('Error Rate', 'Error Rate')} tăng từ 0.2% lên 2%, hãy hiểu đơn giản là ngày càng nhiều người dùng bắt đầu gặp màn hình lỗi, loading mãi hoặc thao tác không thành công.</p>
+            </article>
+            <article class="practice-step">
+              <h3>4. Thử scale up</h3>
+              <p>Tăng số pod hoặc CPU để xem hệ thống có hồi phục không. Nếu có, bottleneck có thể là capacity. Nếu không, có thể code, DB hoặc cache mới là nút thắt.</p>
+            </article>
+            <article class="practice-step">
+              <h3>5. Thử scale down</h3>
+              <p>Khi tải hạ xuống, giảm tài nguyên dần để xem hệ thống có giữ ổn định không. Đây là cách nhìn cả performance lẫn cost, không chỉ nghĩ tới chịu tải tối đa.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-kicker">Interpretation</div>
+            <div class="section-line"></div>
+          </div>
+          <h3>Đọc kết quả bằng ngôn ngữ dễ hiểu</h3>
+          <div class="practice-decision-grid">
+            <article class="practice-decision"><h3>${renderTooltipTerm('P95', 'P95')} cao, lỗi thấp</h3><p>Người dùng vẫn vào được nhưng thấy chậm. Đây thường là tín hiệu nghẽn hiệu năng chứ chưa phải sập hệ thống.</p></article>
+            <article class="practice-decision"><h3>${renderTooltipTerm('P95', 'P95')} cao, lỗi cũng cao</h3><p>Không chỉ chậm mà còn bắt đầu có người dùng làm không xong việc. Đây là vùng cần ưu tiên xử lý nhất.</p></article>
+            <article class="practice-decision"><h3>Web chậm nhưng API ổn</h3><p>Khả năng bottleneck ở frontend, asset, render hoặc network. Đừng đổ lỗi backend quá sớm.</p></article>
+            <article class="practice-decision"><h3>API chậm nhưng scale không cứu được</h3><p>Đây thường là dấu hiệu root cause nằm sâu hơn ở query, lock, cache miss hoặc downstream timeout.</p></article>
+          </div>
+        </section>
+      </div>
+    `;
+
+    const LOAD_TABS = {
+      smoke: {
+        id: 'smoke',
+        name: '✅ Smoke',
+        group: 'Loại tải',
+        actorShape: 'dot',
+        stats: [
+          { id: 'vus', label: 'Virtual Users', unit: '' },
+          { id: 'avg', label: 'Avg RT', unit: 'ms' },
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'err', label: 'Error Rate', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'vus', label: 'Virtual Users', min: 5, max: 50, step: 1, value: 10, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 80, step: 5, value: 40, suffix: 's' },
+          { id: 'ramp', label: 'Ramp-up', min: 5, max: 30, step: 5, value: 10, suffix: 's' },
+          { id: 'target', label: 'Target P95', min: 100, max: 1000, step: 50, value: 250, suffix: 'ms' }
+        ],
+        scenarios: {
+          healthy: { name: '✅ Hệ thống healthy', desc: 'Baseline sau deploy', chart: { base: 90, variance: 20, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Smoke chạy nhẹ và phản hồi ổn định, phù hợp để xác nhận build mới còn sống.', cause: 'Không có bottleneck rõ rệt, startup và dependency hoạt động bình thường.', verdict: '<span class="tag ok">✅ Có thể đi tiếp</span>', recs: ['Giữ lại kịch bản này làm baseline mặc định.', 'Dùng làm gate sau mỗi deploy.', 'Alert nếu <strong>P95</strong> vượt 250ms hoặc error vượt 1%.'] } },
+          db_timeout: { name: '🐌 DB connection chậm', desc: 'Timeout ở kết nối nền', chart: { base: 120, variance: 30, errorRate: 0.15, trend: 'spike-then-recover' }, analysis: { what: 'Có spike lớn ngay đầu test, một phần request timeout trước khi hồi phục.', cause: '<strong>Database connection</strong> chưa sẵn sàng, healthcheck chưa đủ tốt hoặc network giữa app và DB không ổn định.', verdict: '<span class="tag bad">❌ Fix trước deploy</span>', recs: ['Kiểm tra healthcheck và thứ tự startup.', 'Review timeout và retry policy.', 'Xác nhận pool đã warm-up trước khi nhận traffic.'] } },
+          server_500: { name: '💥 Lỗi 500 internal', desc: 'Unhandled exception', chart: { base: 2200, variance: 600, errorRate: 0.92, trend: 'constant-fail' }, analysis: { what: 'Ngay request đầu đã trả 500 hàng loạt, smoke test chặn release đúng vai trò của nó.', cause: '<strong>Unhandled exception</strong>, dependency thiếu hoặc config sai khiến app fail từ đường đi cơ bản nhất.', verdict: '<span class="tag bad">❌ Blocker</span>', recs: ['Mở logs ngay tại startup và request path đầu tiên.', 'Rollback nếu đây là deploy mới.', 'Bổ sung unit/integration test cho happy path cơ bản.'] } },
+          slow_start: { name: '🔥 Slow startup', desc: 'Cold start kéo dài', chart: { base: 300, variance: 80, errorRate: 0.05, trend: 'gradual-decrease' }, analysis: { what: 'Response đầu tiên chậm, sau đó giảm dần khi cache và pool đã nóng.', cause: '<strong>Cold Start</strong>, preload nặng, khởi tạo dependency hoặc build cache ở request đầu.', verdict: '<span class="tag warn">⚠️ Cần tối ưu startup</span>', recs: ['Chuyển phần init nặng sang background hoặc startup hook.', 'Warm-up cache và DB pool.', 'Tách dependency không critical ra khỏi path đầu tiên.'] } }
+        }
+      },
+      average: {
+        id: 'average',
+        name: '📊 Average',
+        group: 'Loại tải',
+        actorShape: 'dot',
+        stats: [
+          { id: 'vus', label: 'Virtual Users', unit: '' },
+          { id: 'avg', label: 'Avg RT', unit: 'ms' },
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'err', label: 'Error Rate', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'vus', label: 'Virtual Users', min: 30, max: 300, step: 10, value: 150, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 120, step: 5, value: 60, suffix: 's' },
+          { id: 'ramp', label: 'Ramp-up', min: 5, max: 40, step: 5, value: 20, suffix: 's' },
+          { id: 'target', label: 'Target P95', min: 150, max: 1200, step: 50, value: 350, suffix: 'ms' }
+        ],
+        scenarios: {
+          normal: { name: '✅ Traffic bình thường', desc: '150 users, ổn định', chart: { base: 150, variance: 35, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Đây là kịch bản dùng để giữ baseline performance hàng ngày.', cause: 'Hệ thống đang chạy trong vùng an toàn, không có contention đáng kể.', verdict: '<span class="tag ok">✅ Đạt baseline</span>', recs: ['Lưu kết quả theo release.', 'Dùng so regression trong pipeline.', 'Giữ dataset gần production.'] } },
+          n_plus_one: { name: '🐌 N+1 Query', desc: 'ORM truy vấn lặp', chart: { base: 180, variance: 50, errorRate: 0.03, trend: 'gradual-increase' }, analysis: { what: 'Response tăng dần khi số request tích tụ và DB CPU cao hơn.', cause: '<strong>N+1 Query</strong> khiến mỗi request tạo quá nhiều query nhỏ thay vì join hoặc eager loading.', verdict: '<span class="tag warn">⚠️ Cần optimize query</span>', recs: ['Dùng eager loading hoặc batch query.', 'Kiểm tra <strong>EXPLAIN ANALYZE</strong>.', 'Bổ sung index cho where/join/order by.'] } },
+          cache_miss: { name: '🗄️ Cache miss cao', desc: 'Redis hit rate thấp', chart: { base: 200, variance: 120, errorRate: 0.02, trend: 'spiky' }, analysis: { what: 'Latency lên xuống thất thường, biểu hiện thường gặp khi cache key hoặc TTL không hợp lý.', cause: '<strong>Cache Hit Rate</strong> thấp khiến request rơi xuống DB quá thường xuyên.', verdict: '<span class="tag warn">⚠️ Review cache strategy</span>', recs: ['Đo hit/miss/eviction.', 'Thêm warm-up sau deploy.', 'Thiết kế lại TTL và cache key.'] } },
+          pool_exhausted: { name: '🔗 Connection pool hết', desc: 'Chờ connection quá lâu', chart: { base: 170, variance: 45, errorRate: 0.08, trend: 'sudden-degradation' }, analysis: { what: 'Ban đầu ổn, sau đó latency và timeout tăng nhanh khi pool không đủ connection nhàn rỗi.', cause: '<strong>Pool Exhausted</strong> do connection không release đủ nhanh hoặc pool size quá nhỏ so với concurrency.', verdict: '<span class="tag bad">❌ Cần fix gấp</span>', recs: ['Rà soát release connection bằng try/finally.', 'Tune pool size theo DB capacity.', 'Giảm transaction scope và timeout.'] } }
+        }
+      },
+      stress: {
+        id: 'stress',
+        name: '⚡ Stress',
+        group: 'Loại tải',
+        actorShape: 'dot',
+        stats: [
+          { id: 'vus', label: 'Virtual Users', unit: '' },
+          { id: 'avg', label: 'Avg RT', unit: 'ms' },
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'err', label: 'Error Rate', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'vus', label: 'Virtual Users', min: 100, max: 800, step: 20, value: 400, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 30, max: 120, step: 5, value: 70, suffix: 's' },
+          { id: 'ramp', label: 'Ramp-up', min: 10, max: 50, step: 5, value: 25, suffix: 's' },
+          { id: 'target', label: 'Target P95', min: 200, max: 1800, step: 50, value: 500, suffix: 'ms' }
+        ],
+        scenarios: {
+          scale_ok: { name: '✅ Chịu tải tốt', desc: 'Scale vẫn ổn ở peak vừa', chart: { base: 280, variance: 75, errorRate: 0.02, trend: 'stable-high' }, analysis: { what: 'Hệ thống tăng latency nhẹ nhưng vẫn giữ được error thấp trong vùng peak dự kiến.', cause: 'Scaling, cache và pool đang hoạt động khá đúng tải mục tiêu.', verdict: '<span class="tag ok">✅ Sẵn sàng cho peak vừa</span>', recs: ['Document capacity hiện tại.', 'Theo dõi lại sau mỗi thay đổi kiến trúc.', 'Gắn alert trên CPU, queue và latency.'] } },
+          cpu_hot: { name: '🔥 CPU 100%', desc: 'CPU-bound workload', chart: { base: 320, variance: 110, errorRate: 0.12, trend: 'sharp-degradation' }, analysis: { what: 'Latency đội lên theo kiểu bậc thang, request queue bắt đầu dài và timeout xuất hiện.', cause: 'Có đoạn xử lý <strong>CPU-bound</strong> chạy đồng bộ hoặc resource compute quá ít so với peak.', verdict: '<span class="tag bad">❌ Cần refactor hoặc scale</span>', recs: ['Đưa tác vụ nặng sang background job.', 'Profile code bằng flame graph.', 'Scale ngang nếu bài toán cho phép.'] } },
+          memory_leak: { name: '🧠 Memory leak', desc: 'RAM tăng đều', chart: { base: 260, variance: 70, errorRate: 0.06, trend: 'gradual-memory-degradation' }, analysis: { what: 'Dưới stress, memory leak lộ nhanh hơn và kéo theo pause hoặc OOM risk.', cause: '<strong>Memory Leak</strong> ở cache, object lifecycle hoặc listener không cleanup.', verdict: '<span class="tag bad">❌ Critical</span>', recs: ['Chụp heap snapshot trước và sau test.', 'Đặt max size cho cache.', 'Theo dõi slope tăng memory theo thời gian.'] } },
+          db_lock: { name: '🔒 DB lock contention', desc: 'Transaction chờ lock', chart: { base: 340, variance: 200, errorRate: 0.08, trend: 'spiky-locks' }, analysis: { what: 'Latency có các spike lớn, điển hình của lock wait hoặc deadlock retry.', cause: 'Transaction dài, missing index, isolation level cao hoặc tranh chấp cùng bản ghi.', verdict: '<span class="tag warn">⚠️ Optimize DB transaction</span>', recs: ['Rút ngắn transaction.', 'Index đúng cột filter/update.', 'Theo dõi lock wait bằng DB metrics.'] } }
+        }
+      },
+      spike: {
+        id: 'spike',
+        name: '🚨 Spike',
+        group: 'Loại tải',
+        actorShape: 'dot',
+        stats: [
+          { id: 'vus', label: 'Virtual Users', unit: '' },
+          { id: 'avg', label: 'Avg RT', unit: 'ms' },
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'err', label: 'Error Rate', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'vus', label: 'Virtual Users', min: 200, max: 2000, step: 50, value: 900, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 15, max: 80, step: 5, value: 35, suffix: 's' },
+          { id: 'ramp', label: 'Ramp-up', min: 3, max: 20, step: 1, value: 5, suffix: 's' },
+          { id: 'target', label: 'Target P95', min: 250, max: 2000, step: 50, value: 650, suffix: 'ms' }
+        ],
+        scenarios: {
+          autoscale: { name: '✅ Auto-scaling tốt', desc: 'Pods scale kịp', chart: { base: 390, variance: 150, errorRate: 0.03, trend: 'spike-then-recover' }, analysis: { what: 'Có vùng chậm ngắn khi spike xảy ra, sau đó hệ thống phục hồi khi capacity tăng.', cause: 'Auto-scaling, readiness và load balancing phối hợp tương đối tốt.', verdict: '<span class="tag ok">✅ Resilient</span>', recs: ['Ghi lại policy scale-up hiện tại.', 'Theo dõi chi phí scale.', 'Test thêm scale-down để tránh oscillation.'] } },
+          cold_start: { name: '🐌 Cold start chậm', desc: 'Container ready quá lâu', chart: { base: 520, variance: 420, errorRate: 0.35, trend: 'initial-spike-fail' }, analysis: { what: 'Pod mới lên không kịp nhận traffic, request fail mạnh ở thời điểm đầu.', cause: '<strong>Cold Start</strong> lâu do image nặng, init nặng hoặc probe chưa tối ưu.', verdict: '<span class="tag warn">⚠️ Optimize startup</span>', recs: ['Làm image nhỏ hơn.', 'Warm-up nền.', 'Tune readiness probe và startup path.'] } },
+          circuit_breaker: { name: '⚡ Circuit breaker tốt', desc: 'Fallback hoạt động', chart: { base: 340, variance: 180, errorRate: 0.08, trend: 'circuit-protect' }, analysis: { what: 'Downstream chậm nhưng fallback vẫn giữ được response chấp nhận được.', cause: '<strong>Circuit Breaker</strong> mở đúng lúc, giảm cascading failure.', verdict: '<span class="tag ok">✅ Thiết kế tốt</span>', recs: ['Test half-open recovery.', 'Đảm bảo fallback có giá trị business rõ ràng.', 'Theo dõi circuit state bằng metrics.'] } },
+          queue_backlog: { name: '📦 Queue backlog', desc: 'Async path nghẽn', chart: { base: 600, variance: 250, errorRate: 0.06, trend: 'queue-backlog' }, analysis: { what: 'API có thể chưa fail ngay nhưng backlog tăng rất nhanh phía sau.', cause: 'Producer vượt consumer throughput, batch size chưa hợp lý hoặc consumer chưa scale theo lag.', verdict: '<span class="tag warn">⚠️ Cần scale consumer</span>', recs: ['Auto-scale theo lag.', 'Batch process và async I/O.', 'Alert khi lag vượt SLA business.'] } }
+        }
+      },
+      breakpoint: {
+        id: 'breakpoint',
+        name: '🔍 Breakpoint',
+        group: 'Loại tải',
+        actorShape: 'dot',
+        stats: [
+          { id: 'vus', label: 'Virtual Users', unit: '' },
+          { id: 'avg', label: 'Avg RT', unit: 'ms' },
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'err', label: 'Error Rate', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'vus', label: 'Virtual Users', min: 400, max: 2500, step: 50, value: 1500, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 100, step: 5, value: 45, suffix: 's' },
+          { id: 'ramp', label: 'Ramp-up', min: 5, max: 30, step: 5, value: 10, suffix: 's' },
+          { id: 'target', label: 'Target P95', min: 400, max: 3000, step: 100, value: 900, suffix: 'ms' }
+        ],
+        scenarios: {
+          graceful: { name: '✅ Graceful degradation', desc: 'Core path vẫn sống', chart: { base: 360, variance: 110, errorRate: 0.05, trend: 'graceful-degradation' }, analysis: { what: 'Khi hệ thống quá tải, các tính năng phụ bị giảm nhưng luồng chính vẫn phục vụ được.', cause: 'Có chiến lược degrade, priority queue hoặc feature flag đúng chỗ.', verdict: '<span class="tag ok">✅ Kiến trúc đáng tin</span>', recs: ['Document degradation policy.', 'Thông báo rõ cho user khi giảm tính năng.', 'Test định kỳ đường degrade.'] } },
+          hard_crash: { name: '💥 Hard crash', desc: 'Sập đồng loạt', chart: { base: 420, variance: 150, errorRate: 0.28, trend: 'hard-crash' }, analysis: { what: 'Khi tới ngưỡng, hệ thống sập hẳn thay vì degrade từ từ.', cause: 'Retry storm, OOM, pool cạn hoặc dependency cascade fail cùng lúc.', verdict: '<span class="tag bad">❌ Architecture issue</span>', recs: ['Thêm circuit breaker.', 'Giảm retry đồng loạt bằng backoff + jitter.', 'Đặt resource limit và alert rõ hơn.'] } },
+          throttle: { name: '🚦 Rate limiting', desc: '429 xuất hiện', chart: { base: 390, variance: 120, errorRate: 0.18, trend: 'throttle-429' }, analysis: { what: 'Hệ thống tự bảo vệ bằng cách từ chối bớt request mới.', cause: '<strong>Rate Limiting</strong> hoạt động, nhưng policy có thể cần review để không block user thật quá mức.', verdict: '<span class="tag warn">⚠️ Review policy</span>', recs: ['Trả về Retry-After rõ ràng.', 'Ưu tiên user hoặc API key quan trọng.', 'Đo số hit rate limit thực tế.'] } },
+          db_maxconn: { name: '🔗 DB max connections', desc: 'Reached max_connections', chart: { base: 430, variance: 160, errorRate: 0.22, trend: 'db-maxconn' }, analysis: { what: 'Một ngưỡng rất điển hình: DB không còn connection để phục vụ request mới.', cause: 'Thiếu pool middleware, idle cleanup chưa tốt, hoặc app mở quá nhiều connection song song.', verdict: '<span class="tag bad">❌ Tune DB + app</span>', recs: ['Xem xét <strong>pgBouncer</strong> hoặc tương đương.', 'Giảm idle timeout.', 'Theo dõi active/idle connections.'] } }
+        }
+      },
+      soak: {
+        id: 'soak',
+        name: '⏱️ Soak',
+        group: 'Loại tải',
+        actorShape: 'dot',
+        stats: [
+          { id: 'vus', label: 'Virtual Users', unit: '' },
+          { id: 'avg', label: 'Avg RT', unit: 'ms' },
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'err', label: 'Error Rate', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'vus', label: 'Virtual Users', min: 50, max: 300, step: 10, value: 120, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 40, max: 180, step: 10, value: 90, suffix: 's' },
+          { id: 'ramp', label: 'Ramp-up', min: 10, max: 40, step: 5, value: 20, suffix: 's' },
+          { id: 'target', label: 'Target P95', min: 150, max: 1200, step: 50, value: 300, suffix: 'ms' }
+        ],
+        scenarios: {
+          stable: { name: '✅ Ổn định dài hạn', desc: 'Không degradation', chart: { base: 165, variance: 28, errorRate: 0.01, trend: 'long-stable' }, analysis: { what: 'Hệ thống giữ được vùng ổn định tương đối lâu mà không drift rõ rệt.', cause: 'Resource management tốt và không có leak đáng kể.', verdict: '<span class="tag ok">✅ Production ready</span>', recs: ['Lên lịch chạy định kỳ.', 'Lưu baseline theo tuần.', 'Đặt alert cho drift bất thường.'] } },
+          slow_mem_leak: { name: '🧠 Memory leak chậm', desc: 'RAM tăng đều theo giờ', chart: { base: 175, variance: 35, errorRate: 0.02, trend: 'slow-memory-leak' }, analysis: { what: 'Nhìn ngắn hạn có thể tưởng ổn, nhưng càng chạy lâu càng thấy trôi hiệu năng.', cause: '<strong>Slow Memory Leak</strong> tích tụ dần nên chỉ <strong>Soak Test</strong> mới lộ rõ.', verdict: '<span class="tag bad">❌ Sẽ nổ trong production</span>', recs: ['So snapshot đầu và cuối test.', 'Đặt max size cho cache/listener.', 'Theo dõi trend memory thay vì giá trị tức thời.'] } },
+          conn_leak: { name: '🔗 DB connection leak', desc: 'Connection không trả lại pool', chart: { base: 180, variance: 45, errorRate: 0.04, trend: 'connection-leak' }, analysis: { what: 'Ban đầu ổn, sau đó active connection cứ tăng dần tới ngưỡng cứng.', cause: 'Error path không release connection hoặc transaction không đóng đúng vòng đời.', verdict: '<span class="tag bad">❌ Bug nghiêm trọng</span>', recs: ['Rà try/finally cho mọi DB path.', 'Đo active vs idle connections.', 'Thêm test riêng cho error path.'] } },
+          disk_full: { name: '💾 Disk đầy dần', desc: 'Log growth và temp files', chart: { base: 170, variance: 30, errorRate: 0.03, trend: 'disk-full' }, analysis: { what: 'Latency cuối bài test tăng khi disk gần đầy hoặc I/O bắt đầu nghẽn.', cause: 'Thiếu log rotation, temp file cleanup hoặc output path bị tích lũy quá lâu.', verdict: '<span class="tag warn">⚠️ Fix ở ops + app</span>', recs: ['Bật log rotation.', 'Cleanup temp files định kỳ.', 'Alert khi disk vượt 70% và 85%.'] } }
+        }
+      }
+    };
+
+    const LAYERS = {
+      frontend: {
+        id: 'frontend',
+        name: '🖥️ Frontend',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'P95 Render', unit: 'ms' },
+          { id: 'fps', label: 'FPS', unit: '' },
+          { id: 'err', label: 'Error', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'load', label: 'Page Load', min: 10, max: 100, step: 5, value: 40, suffix: '%' },
+          { id: 'duration', label: 'Duration', min: 20, max: 60, step: 5, value: 30, suffix: 's' },
+          { id: 'budget', label: 'Perf Budget', min: 100, max: 5000, step: 100, value: 1800, suffix: 'ms' }
+        ],
+        scenarios: {
+          optimized: { name: '✅ Optimized', desc: 'LCP và FPS tốt', chart: { base: 120, variance: 20, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'UI mượt, render ổn, ít long task.', cause: 'Bundle nhỏ, code split hợp lý, critical asset được ưu tiên tải.', verdict: '<span class="tag ok">✅ UX đẹp</span>', recs: ['Giữ performance budget.', 'Theo dõi <strong>LCP</strong> và <strong>CLS</strong>.', 'Đưa Lighthouse vào pipeline.'] } },
+          heavy_js: { name: '⚡ JS bundle nặng', desc: 'Main thread bị block', chart: { base: 220, variance: 45, errorRate: 0.05, trend: 'gradual-increase' }, analysis: { what: 'Render và interaction xuống dần khi main thread bận parse/execution.', cause: 'Bundle lớn, third-party script nhiều, thiếu code splitting.', verdict: '<span class="tag warn">⚠️ Cần cắt JS</span>', recs: ['Code split theo route.', 'Defer script ngoài.', 'Dùng bundle analyzer.'] } },
+          render_block: { name: '🚧 Render blocking', desc: 'CSS và font chặn paint', chart: { base: 260, variance: 80, errorRate: 0.03, trend: 'spiky' }, analysis: { what: 'First paint chậm, layout shift xuất hiện.', cause: 'Critical CSS chưa tối ưu, font load strategy chưa đúng.', verdict: '<span class="tag warn">⚠️ Fix loading strategy</span>', recs: ['Inline critical CSS.', 'Preload font chính.', 'Đặt width/height cho media.'] } }
+        }
+      },
+      database: {
+        id: 'database',
+        name: '🗄️ Database',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'P95 Query', unit: 'ms' },
+          { id: 'qps', label: 'QPS', unit: '' },
+          { id: 'err', label: 'Error', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'qps', label: 'Target QPS', min: 20, max: 600, step: 10, value: 120, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 70, step: 5, value: 35, suffix: 's' },
+          { id: 'budget', label: 'Target P95', min: 20, max: 500, step: 10, value: 80, suffix: 'ms' }
+        ],
+        scenarios: {
+          db_ok: { name: '✅ Optimized', desc: 'Index và pool hợp lý', chart: { base: 45, variance: 10, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Query ổn định, throughput đều và ít lock wait.', cause: 'Index tốt, query plan đẹp và pool đang ở đúng size.', verdict: '<span class="tag ok">✅ DB khỏe</span>', recs: ['Theo dõi slow query log.', 'Review query plan trước release.', 'Đo lock wait định kỳ.'] } },
+          db_n1: { name: '🐌 N+1 Query', desc: 'ORM bắn nhiều query', chart: { base: 70, variance: 30, errorRate: 0.07, trend: 'gradual-increase' }, analysis: { what: 'QPS vào DB tăng mạnh hơn business request thật.', cause: '<strong>N+1 Query</strong> và batch fetch thiếu tối ưu.', verdict: '<span class="tag warn">⚠️ Fix query shape</span>', recs: ['Dùng eager loading.', 'Batch read thay vì loop.', 'Thêm index đúng access path.'] } },
+          db_lock: { name: '🔒 Lock contention', desc: 'Wait và deadlock', chart: { base: 90, variance: 60, errorRate: 0.12, trend: 'spiky-locks' }, analysis: { what: 'Có spike rõ, throughput tụt trong vùng conflict.', cause: 'Transaction dài, update cùng tài nguyên hoặc thiếu index.', verdict: '<span class="tag bad">❌ Tune transaction</span>', recs: ['Rút transaction scope.', 'Giảm contention bằng shard/key design.', 'Đo lock wait chi tiết.'] } }
+        }
+      },
+      cache: {
+        id: 'cache',
+        name: '⚡ Cache',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'P95 Latency', unit: 'ms' },
+          { id: 'hit', label: 'Hit Rate', unit: '%' },
+          { id: 'err', label: 'Miss/Error', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'ttl', label: 'TTL', min: 30, max: 1800, step: 30, value: 300, suffix: 's' },
+          { id: 'duration', label: 'Duration', min: 20, max: 70, step: 5, value: 30, suffix: 's' },
+          { id: 'budget', label: 'Target P95', min: 5, max: 200, step: 5, value: 30, suffix: 'ms' }
+        ],
+        scenarios: {
+          cache_ok: { name: '✅ Hit rate cao', desc: 'Redis đang giúp đúng cách', chart: { base: 12, variance: 4, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Đây là trạng thái cache lý tưởng: nhanh, hit rate cao, ít eviction bất thường.', cause: 'TTL đúng, key sạch và memory đủ.', verdict: '<span class="tag ok">✅ Cache khỏe</span>', recs: ['Monitor hit/miss/eviction.', 'Phân loại TTL theo data.', 'Warm-up sau deploy.'] } },
+          stampede: { name: '⛈️ Cache stampede', desc: 'Expire đồng loạt', chart: { base: 28, variance: 18, errorRate: 0.09, trend: 'sudden-degradation' }, analysis: { what: 'Một cụm key hết hạn cùng lúc kéo theo DB spike và latency vọt lên.', cause: '<strong>Cache Stampede</strong> vì TTL không jitter hoặc không có request coalescing.', verdict: '<span class="tag warn">⚠️ Anti-stampede cần thiết</span>', recs: ['Jitter TTL.', 'Singleflight/request coalescing.', 'Stale-while-revalidate.'] } },
+          cache_oom: { name: '💾 Memory pressure', desc: 'Eviction và fragmentation', chart: { base: 35, variance: 18, errorRate: 0.06, trend: 'gradual-increase' }, analysis: { what: 'Cache bắt đầu mất lợi ích khi memory gần đầy và eviction tăng liên tục.', cause: 'Thiếu maxmemory, key quá lớn hoặc không có policy hợp lý.', verdict: '<span class="tag bad">❌ Tune memory</span>', recs: ['Giới hạn maxmemory.', 'Compress value lớn.', 'Review key orphan và eviction policy.'] } }
+        }
+      },
+      mq: {
+        id: 'mq',
+        name: '📦 MQ',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'Msg Latency', unit: 'ms' },
+          { id: 'lag', label: 'Queue Lag', unit: '' },
+          { id: 'err', label: 'Error', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'rate', label: 'Msg Rate', min: 100, max: 5000, step: 100, value: 1000, suffix: '/s' },
+          { id: 'duration', label: 'Duration', min: 20, max: 70, step: 5, value: 30, suffix: 's' },
+          { id: 'budget', label: 'Target Lag', min: 10, max: 3000, step: 10, value: 200, suffix: '' }
+        ],
+        scenarios: {
+          mq_ok: { name: '✅ Balanced', desc: 'Lag thấp, ack ổn', chart: { base: 16, variance: 5, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Consumer giữ nhịp tốt với producer, queue không phình vô lý.', cause: 'Số consumer, prefetch và downstream write đang cân đối.', verdict: '<span class="tag ok">✅ Pipeline khỏe</span>', recs: ['Theo dõi lag theo partition/queue.', 'Test poison message path.', 'Đảm bảo idempotency.'] } },
+          mq_backlog: { name: '📈 Lag tăng dần', desc: 'Consumer chậm hơn producer', chart: { base: 45, variance: 30, errorRate: 0.07, trend: 'gradual-increase' }, analysis: { what: 'API vẫn có thể ổn nhưng backlog phía sau tăng dần.', cause: 'Consumer sync I/O, batch size chưa tốt hoặc worker chưa scale đủ.', verdict: '<span class="tag warn">⚠️ Scale consumer</span>', recs: ['Scale theo lag.', 'Batch write.', 'Tách consumer path nặng.'] } },
+          mq_dup: { name: '🔁 Duplicate', desc: 'Retry gây xử lý trùng', chart: { base: 28, variance: 18, errorRate: 0.11, trend: 'spiky' }, analysis: { what: 'Trùng message làm business state dễ sai dù throughput nhìn có vẻ vẫn ổn.', cause: 'Thiếu <strong>Idempotency</strong>, ack sai thời điểm hoặc retry sau network issue.', verdict: '<span class="tag bad">❌ Fix semantics</span>', recs: ['Ack sau commit.', 'Thêm idempotency key.', 'Đo tỷ lệ duplicate.'] } }
+        }
+      },
+      cdn: {
+        id: 'cdn',
+        name: '🌍 CDN',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'P95 TTFB', unit: 'ms' },
+          { id: 'hit', label: 'Cache Hit', unit: '%' },
+          { id: 'err', label: 'Error', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'pop', label: 'POPs', min: 3, max: 50, step: 1, value: 15, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 15, max: 60, step: 5, value: 25, suffix: 's' },
+          { id: 'budget', label: 'Target TTFB', min: 20, max: 500, step: 10, value: 80, suffix: 'ms' }
+        ],
+        scenarios: {
+          cdn_ok: { name: '✅ Fast global', desc: 'TTFB và hit tốt', chart: { base: 35, variance: 10, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Edge đang trả tài nguyên nhanh và đều.', cause: 'Header cache đúng, compression tốt và route edge hợp lý.', verdict: '<span class="tag ok">✅ Edge khỏe</span>', recs: ['Giữ cache-control rõ.', 'Bật brotli.', 'Theo dõi hit/miss/stale.'] } },
+          cdn_miss: { name: '❌ High miss', desc: 'Bypass cache quá nhiều', chart: { base: 90, variance: 40, errorRate: 0.06, trend: 'sudden-degradation' }, analysis: { what: 'Origin bị kéo vào nhiều hơn cần thiết, dẫn tới TTFB cao và cost tăng.', cause: 'Header sai, invalidate quá rộng hoặc URL dynamic không cache được.', verdict: '<span class="tag warn">⚠️ Tune headers</span>', recs: ['Audit cache-control.', 'Tách static và dynamic rõ hơn.', 'Warm-up asset quan trọng.'] } },
+          cdn_tls: { name: '🔐 TLS slow', desc: 'Handshake chậm', chart: { base: 70, variance: 22, errorRate: 0.03, trend: 'gradual-increase' }, analysis: { what: 'Mobile và region xa chịu ảnh hưởng mạnh hơn vì handshake tốn thời gian.', cause: 'TLS 1.3, resumption, certificate chain hoặc HTTP/3 chưa tối ưu.', verdict: '<span class="tag warn">⚠️ Optimize TLS</span>', recs: ['Bật TLS 1.3.', 'Dùng session resumption.', 'Rút certificate chain nếu cần.'] } }
+        }
+      },
+      infra: {
+        id: 'infra',
+        name: '🖥️ Infra',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'cpu', label: 'CPU', unit: '%' },
+          { id: 'err', label: 'Error', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'cpu', label: 'CPU Cores', min: 1, max: 16, step: 1, value: 4, suffix: 'c' },
+          { id: 'duration', label: 'Duration', min: 20, max: 90, step: 5, value: 35, suffix: 's' },
+          { id: 'budget', label: 'Target CPU', min: 20, max: 95, step: 5, value: 65, suffix: '%' }
+        ],
+        scenarios: {
+          infra_ok: { name: '✅ Balanced', desc: 'CPU/RAM ổn', chart: { base: 35, variance: 10, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Node đủ sức chứa và không bị throttling bất thường.', cause: 'Sizing hợp lý, workload không có path bùng phát vô lý.', verdict: '<span class="tag ok">✅ Provision tốt</span>', recs: ['Đo iowait và CPU steal.', 'Theo dõi throttle.', 'Auto-scale bằng latency hoặc queue nếu cần.'] } },
+          infra_cpu: { name: '🔥 CPU starvation', desc: 'Throttle và queue dài', chart: { base: 45, variance: 25, errorRate: 0.1, trend: 'sharp-degradation' }, analysis: { what: 'CPU lên trần và request bắt đầu xếp hàng.', cause: 'Compute under-provisioned hoặc có đoạn xử lý đồng bộ quá nặng.', verdict: '<span class="tag bad">❌ Scale hoặc optimize</span>', recs: ['Profile hotspot CPU.', 'Offload background.', 'Tune cgroup limit.'] } },
+          infra_mem: { name: '💾 RAM + swap', desc: 'Memory pressure', chart: { base: 55, variance: 25, errorRate: 0.08, trend: 'gradual-memory-degradation' }, analysis: { what: 'Swap làm latency xuống dần theo thời gian, đặc biệt khi I/O bắt đầu nghẽn.', cause: 'Memory leak hoặc working set vượt quá machine size.', verdict: '<span class="tag warn">⚠️ Critical memory</span>', recs: ['Theo dõi swap và page fault.', 'Tìm leak.', 'Đặt memory limit rõ hơn.'] } }
+        }
+      },
+      auth: {
+        id: 'auth',
+        name: '🔐 Auth',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'P95 Auth', unit: 'ms' },
+          { id: 'rps', label: 'Login RPS', unit: '' },
+          { id: 'err', label: 'Fail', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'rps', label: 'Login RPS', min: 10, max: 500, step: 10, value: 100, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 70, step: 5, value: 30, suffix: 's' },
+          { id: 'budget', label: 'Target Auth', min: 100, max: 800, step: 20, value: 220, suffix: 'ms' }
+        ],
+        scenarios: {
+          auth_ok: { name: '✅ Fast & secure', desc: 'Login cân bằng', chart: { base: 140, variance: 20, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Login nhanh, fail rate thấp và rate limit vẫn giữ được kiểm soát.', cause: 'Hash cost hợp lý, token validation nhẹ và cache hỗ trợ đúng chỗ.', verdict: '<span class="tag ok">✅ Cân bằng tốt</span>', recs: ['Giữ JWT gọn.', 'Theo dõi login spike.', 'Đặt rate limit trên fail path.'] } },
+          auth_slow: { name: '🐌 Bcrypt quá nặng', desc: 'CPU spike ở auth', chart: { base: 180, variance: 40, errorRate: 0.04, trend: 'gradual-increase' }, analysis: { what: 'Khi concurrency tăng, auth node nóng nhanh hơn các node khác.', cause: 'Hash cost quá cao hoặc chạy sync trên event loop.', verdict: '<span class="tag warn">⚠️ Tune hash cost</span>', recs: ['Review rounds.', 'Dùng worker thread/process.', 'Đo CPU per login.'] } },
+          auth_brute: { name: '🛡️ Brute force', desc: 'Fail storm', chart: { base: 160, variance: 35, errorRate: 0.15, trend: 'sudden-degradation' }, analysis: { what: 'Luồng auth vừa chậm vừa tốn tài nguyên vì lượng login fail quá lớn.', cause: 'Thiếu rate limit, fail-fast chưa tốt hoặc DB check bị hit quá sớm.', verdict: '<span class="tag bad">❌ Security + perf issue</span>', recs: ['Rate limit theo IP và username.', 'Backoff khi fail liên tiếp.', 'Đo pattern failed auth.'] } }
+        }
+      },
+      websocket: {
+        id: 'websocket',
+        name: '🔌 WS',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'Msg Latency', unit: 'ms' },
+          { id: 'conns', label: 'Connections', unit: '' },
+          { id: 'err', label: 'Drop', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'conns', label: 'Connections', min: 100, max: 10000, step: 100, value: 2000, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 70, step: 5, value: 30, suffix: 's' },
+          { id: 'budget', label: 'Target Msg', min: 10, max: 500, step: 10, value: 80, suffix: 'ms' }
+        ],
+        scenarios: {
+          ws_ok: { name: '✅ Stable realtime', desc: 'Conn khỏe', chart: { base: 18, variance: 5, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Realtime path giữ được độ trễ thấp và số connection ổn định.', cause: 'Ping/pong đúng, I/O non-blocking và fan-out chưa quá tải.', verdict: '<span class="tag ok">✅ Realtime tốt</span>', recs: ['Theo dõi open connection và drop.', 'Test reconnect.', 'Giới hạn payload đủ nhỏ.'] } },
+          ws_leak: { name: '🕳️ Connection leak', desc: 'FD tăng dần', chart: { base: 26, variance: 14, errorRate: 0.09, trend: 'gradual-increase' }, analysis: { what: 'Lâu dần server từ chối connection mới dù CPU chưa chắc cao.', cause: 'Zombie connection hoặc cleanup chưa đúng.', verdict: '<span class="tag warn">⚠️ Fix lifecycle</span>', recs: ['Thêm close/error handler.', 'Idle timeout rõ ràng.', 'Theo dõi FD so với ulimit.'] } },
+          ws_broadcast: { name: '📢 Broadcast storm', desc: 'Fan-out quá nặng', chart: { base: 32, variance: 20, errorRate: 0.07, trend: 'sudden-degradation' }, analysis: { what: 'Khi broadcast lớn, latency message tăng rất nhanh.', cause: 'Fan-out sync, payload lớn hoặc không có pub/sub backend.', verdict: '<span class="tag bad">❌ Optimize fan-out</span>', recs: ['Pub/sub backend.', 'Giảm payload.', 'Tối ưu routing theo room/topic.'] } }
+        }
+      },
+      search: {
+        id: 'search',
+        name: '🔎 Search',
+        group: 'Layer hệ thống',
+        actorShape: 'square',
+        stats: [
+          { id: 'p95', label: 'P95 Query', unit: 'ms' },
+          { id: 'idx', label: 'Index Lag', unit: 's' },
+          { id: 'err', label: 'Error', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'docs', label: 'Doc Count', min: 10000, max: 1000000, step: 10000, value: 100000, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 70, step: 5, value: 30, suffix: 's' },
+          { id: 'budget', label: 'Target Query', min: 20, max: 600, step: 10, value: 120, suffix: 'ms' }
+        ],
+        scenarios: {
+          search_ok: { name: '✅ Fast queries', desc: 'Query và indexing cân bằng', chart: { base: 32, variance: 8, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'Search trả kết quả nhanh và index lag còn trong tầm kiểm soát.', cause: 'Shards, refresh interval và query pattern đang khá hợp lý.', verdict: '<span class="tag ok">✅ Search khỏe</span>', recs: ['Theo dõi segment merge.', 'Đo heap và GC pause.', 'Giới hạn deep pagination.'] } },
+          search_heavy: { name: '🐌 Wildcard scan', desc: 'No index-friendly query', chart: { base: 48, variance: 28, errorRate: 0.04, trend: 'gradual-increase' }, analysis: { what: 'Query chậm dần khi pattern tìm kiếm không phù hợp với index hiện có.', cause: 'Leading wildcard, filter/sort không tối ưu, pagination sâu.', verdict: '<span class="tag warn">⚠️ Optimize query</span>', recs: ['Hạn chế wildcard đầu.', 'Index fields dùng để filter/sort.', 'Dùng search_after.'] } },
+          search_overload: { name: '🌪️ Index overload', desc: 'Refresh quá dày', chart: { base: 65, variance: 38, errorRate: 0.08, trend: 'spiky' }, analysis: { what: 'Ghi nhiều làm query cùng chậm vì index refresh và merge tốn I/O.', cause: 'refresh interval quá ngắn và batch write chưa tối ưu.', verdict: '<span class="tag bad">❌ Tune indexing pipeline</span>', recs: ['Tăng refresh interval lúc bulk.', 'Batch theo size hợp lý.', 'Theo dõi merge và segment count.'] } }
+        }
+      }
+    };
+
+    const API_TABS = {
+      api: {
+        id: 'api',
+        name: '🔗 API',
+        group: 'API',
+        actorShape: 'dot',
+        stats: [
+          { id: 'rps', label: 'RPS', unit: '' },
+          { id: 'avg', label: 'Avg RT', unit: 'ms' },
+          { id: 'p95', label: 'P95', unit: 'ms' },
+          { id: 'err', label: 'Error Rate', unit: '%' },
+          { id: 'status', label: 'Status', unit: '' }
+        ],
+        params: [
+          { id: 'vus', label: 'Virtual Users', min: 20, max: 800, step: 10, value: 180, suffix: '' },
+          { id: 'duration', label: 'Duration', min: 20, max: 90, step: 5, value: 45, suffix: 's' },
+          { id: 'ramp', label: 'Ramp-up', min: 5, max: 30, step: 5, value: 10, suffix: 's' },
+          { id: 'target', label: 'Target P95', min: 120, max: 1400, step: 20, value: 320, suffix: 'ms' }
+        ],
+        scenarios: {
+          healthy: { name: '✅ Healthy endpoint', desc: 'REST API phản hồi ổn định', chart: { base: 140, variance: 25, errorRate: 0.01, trend: 'stable' }, analysis: { what: 'API trả lời đều và nhanh. Người dùng sẽ thấy trang mở ổn, ít phải chờ.', cause: 'Đường đi backend gọn, query và cache ổn định, downstream chưa có bottleneck rõ.', verdict: '<span class="tag ok">✅ API ổn</span>', recs: ['Lưu lại baseline này.', 'So P95 sau mỗi release.', 'Dùng scenario này làm mốc đầu tiên cho team non-tech.'] } },
+          db_slow: { name: '🐌 Downstream DB chậm', desc: 'API bị kéo chậm từ query nền', chart: { base: 180, variance: 60, errorRate: 0.05, trend: 'gradual-increase' }, analysis: { what: 'User vẫn thấy được dữ liệu nhưng màn hình mở chậm dần khi tải tăng.', cause: 'API không tự chậm; bottleneck nằm ở database hoặc service phía sau mà API đang gọi.', verdict: '<span class="tag warn">⚠️ API là triệu chứng</span>', recs: ['Tách thời gian API và thời gian downstream.', 'Review query plan hoặc cache miss.', 'Đừng scale API blind khi DB mới là nút thắt.'] } },
+          rate_limit: { name: '🚦 Rate limit bảo vệ', desc: '429 xuất hiện khi tải dồn', chart: { base: 210, variance: 80, errorRate: 0.14, trend: 'throttle-429' }, analysis: { what: 'Một phần request bị chặn để hệ thống không sập toàn bộ. Người dùng sẽ thấy fail cục bộ nhưng hệ thống vẫn giữ core path sống.', cause: 'Gateway hoặc API policy đang tự bảo vệ bằng rate limit khi tải tăng quá nhanh.', verdict: '<span class="tag warn">⚠️ Bảo vệ đúng nhưng cần giải thích</span>', recs: ['Trả message dễ hiểu cho user.', 'Review limit cho nhóm request quan trọng.', 'Đo ai bị chặn và chặn vào lúc nào.'] } },
+          timeout_chain: { name: '💥 Timeout cascade', desc: 'API chờ downstream rồi fail dây chuyền', chart: { base: 260, variance: 140, errorRate: 0.22, trend: 'sudden-degradation' }, analysis: { what: 'Người dùng thấy loading rất lâu rồi lỗi. Đây là kiểu đau nhất vì vừa chậm vừa fail.', cause: 'Một dependency bên dưới timeout kéo theo API chờ quá lâu, retry hoặc queue ở giữa càng làm hệ thống nghẽn hơn.', verdict: '<span class="tag bad">❌ Cần cắt chuỗi chờ</span>', recs: ['Đặt timeout rõ ràng.', 'Dùng circuit breaker hoặc fallback.', 'Giảm retry đồng loạt.'] } }
+        }
+      }
+    };
+
+    const state = {
+      activeTab: 'roadmap',
+      charts: {},
+      activeScenarios: {},
+      running: {},
+      theme: 'light'
+    };
+
+    function buildTabs() {
+      const tabsWrap = document.getElementById('tabs-wrap');
+      const groups = [
+        { label: 'Kiến thức nền', tabs: STATIC_TABS },
+        { label: 'Loại tải', tabs: LOAD_TAB_ORDER.map(key => LOAD_TABS[key]) },
+        { label: 'Layer hệ thống', tabs: LAYER_TAB_ORDER.map(key => LAYERS[key]) },
+        { label: 'API', tabs: API_TAB_ORDER.map(key => API_TABS[key]) }
+      ];
+
+      tabsWrap.innerHTML = groups.map(group => `
+        <div class="tab-group">
+          <div class="group-label">${group.label}</div>
+          <div class="tab-list">
+            ${group.tabs.map(tab => `<button class="tab-btn ${tab.id === state.activeTab ? 'active' : ''}" type="button" data-tab="${tab.id}">${tab.name}</button>`).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      tabsWrap.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', () => switchTab(button.dataset.tab));
+      });
+    }
+
+    function renderStaticTab(tabId, html) {
+      return `<section class="tab-content ${tabId === state.activeTab ? 'active' : ''}" id="tab-${tabId}">${html}</section>`;
+    }
+
+    function renderDynamicTab(def, mode) {
+      const scenarioKeys = Object.keys(def.scenarios);
+      const firstScenario = def.scenarios[scenarioKeys[0]];
+      state.activeScenarios[def.id] = scenarioKeys[0];
+      const scenarioLabel = mode === 'load' ? 'Load Test Scenarios' : mode === 'api' ? 'API Scenarios' : 'Layer Scenarios';
+      const profileLabel = mode === 'load' ? 'Load Profile' : mode === 'api' ? 'API Profile' : 'Layer Profile';
+
+      return `
+        <section class="tab-content ${def.id === state.activeTab ? 'active' : ''}" id="tab-${def.id}">
+          <div class="lab-grid">
+            <aside class="sidebar">
+              <div class="section-kicker">${scenarioLabel}</div>
+              <div class="sidebar-title-row" style="margin-top:8px;">
+                <h2>${def.name}</h2>
+                ${renderLevelBadge(def.id)}
+              </div>
+              <p style="color:var(--text-soft); margin-top:6px;">Chọn kịch bản, tinh chỉnh tham số rồi chạy demo để quan sát <strong>${renderTooltipTerm('Latency', 'latency')}</strong>, lỗi và hành vi degrade.</p>
+              <div class="scenario-list" data-tab-id="${def.id}">
+                ${scenarioKeys.map((key, index) => `
+                  <div class="scenario-item ${index === 0 ? 'active' : ''}" data-scenario="${key}">
+                    <div class="scenario-head">
+                      <div class="scenario-name">${def.scenarios[key].name}</div>
+                    </div>
+                    <div class="scenario-desc">${def.scenarios[key].desc}</div>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="scenario-actions">
+                <button class="context-btn" type="button" id="${def.id}-usecase">🧭 Map ra ứng dụng thật</button>
+              </div>
+              ${renderGuideBlock(def.id)}
+              <div class="playground">
+                <div class="section-kicker" style="margin-bottom:10px;">Parameter Playground</div>
+                ${def.params.map(param => `
+                  <div class="param-row">
+                    <label>${renderTooltipText(param.label)}<span id="${def.id}-${param.id}-value">${param.value}${param.suffix}</span></label>
+                    <input type="range" id="${def.id}-${param.id}" min="${param.min}" max="${param.max}" step="${param.step}" value="${param.value}" />
+                  </div>
+                `).join('')}
+              </div>
+              <div class="controls">
+                <button class="btn btn-primary" type="button" id="${def.id}-run">▶ Chạy Demo</button>
+                <button class="btn" type="button" id="${def.id}-reset">↺ Reset</button>
+              </div>
+            </aside>
+            <div class="main-panel">
+              <div class="stats-grid">
+                ${def.stats.map(stat => `
+                  <article class="stat-card">
+                    <div class="stat-caption">${renderTooltipText(stat.label)}</div>
+                    <div class="stat-value" id="${def.id}-stat-${stat.id}">—</div>
+                    <div class="stat-unit">${stat.unit}</div>
+                  </article>
+                `).join('')}
+              </div>
+              <section class="viz-card">
+                <div class="viz-header">
+                  <div class="viz-title"><span class="live-dot"></span> Real-time Simulation</div>
+                  <span class="tag info">${profileLabel}</span>
+                </div>
+                <div class="actors" id="${def.id}-actors"></div>
+                <div class="progress-wrap">
+                  <div class="progress-label">
+                    <span id="${def.id}-scenario-label">${firstScenario.name}</span>
+                    <span id="${def.id}-progress">0%</span>
+                  </div>
+                  <div class="progress"><div class="progress-bar" id="${def.id}-bar"></div></div>
+                </div>
+                <div class="chart-container"><canvas id="${def.id}-chart"></canvas></div>
+              </section>
+              <section class="analysis-card">
+                <div class="analysis-header">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="analysis-icon" id="${def.id}-analysis-icon">🔍</div>
+                    <div>
+                      <div style="font-weight:700;">Phân tích kết quả</div>
+                      <div class="tiny" style="color:var(--text-soft); margin-top:4px;" id="${def.id}-analysis-subtitle">Chọn scenario rồi chạy demo</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="analysis-body">
+                  <div class="analysis-plain-grid">
+                    <div class="analysis-plain-card">
+                      <strong>Nói đơn giản</strong>
+                      <p id="${def.id}-plain-summary"><em>Chạy demo để xem bản dịch dễ hiểu.</em></p>
+                    </div>
+                    <div class="analysis-plain-card">
+                      <strong>Người dùng sẽ cảm thấy gì?</strong>
+                      <p id="${def.id}-impact-summary"><em>Sau khi chạy xong, phần này sẽ nói theo góc nhìn user/business.</em></p>
+                    </div>
+                  </div>
+                  <div class="analysis-block"><div class="analysis-label">What Happened?</div><div class="analysis-text" id="${def.id}-what"><em>Chạy demo để xem kết quả.</em></div></div>
+                  <div class="analysis-block"><div class="analysis-label">Root Cause</div><div class="analysis-text" id="${def.id}-cause"><em>Đang chờ phân tích.</em></div></div>
+                  <div class="analysis-block"><div class="analysis-label">Verdict</div><div class="analysis-text" id="${def.id}-verdict"><em>Chưa có đánh giá.</em></div></div>
+                  <div class="analysis-block"><div class="analysis-label">Recommendations</div><div class="analysis-text" id="${def.id}-recs"><em>Recommendations sẽ xuất hiện sau khi chạy.</em></div></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderApp() {
+      const app = document.getElementById('app-content');
+      app.innerHTML = [
+        renderStaticTab('roadmap', ROADMAP_HTML),
+        renderStaticTab('theory', THEORY_HTML),
+        renderStaticTab('practice', PRACTICE_HTML),
+        ...LOAD_TAB_ORDER.map(key => renderDynamicTab(LOAD_TABS[key], 'load')),
+        ...LAYER_TAB_ORDER.map(key => renderDynamicTab(LAYERS[key], 'layer')),
+        ...API_TAB_ORDER.map(key => renderDynamicTab(API_TABS[key], 'api')),
+        renderUseCaseModal()
+      ].join('');
+    }
+
+    function renderUseCaseModal() {
+      return `
+        <div class="usecase-modal" id="usecase-modal" aria-hidden="true">
+          <div class="usecase-dialog" role="dialog" aria-modal="true" aria-labelledby="usecase-title">
+            <div class="usecase-header">
+              <div>
+                <div class="section-kicker">Use Case Mapping</div>
+                <h2 id="usecase-title">Map với ứng dụng ngoài đời</h2>
+                <div id="usecase-subtitle" style="color:var(--text-soft);"></div>
+              </div>
+              <button class="usecase-close" type="button" id="usecase-close">×</button>
+            </div>
+            <div class="usecase-summary" id="usecase-summary"></div>
+            <div class="usecase-grid" id="usecase-grid"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function initCollapsiblesForTab(tabId) {
+      const sections = document.querySelectorAll(`#tab-${tabId} .content-grid > .section-card, #tab-${tabId} .content-grid > .table-card`);
+      sections.forEach((section, index) => {
+        if (section.dataset.collapsibleReady === 'true') return;
+
+        const kicker = section.querySelector('.section-kicker')?.textContent?.trim() || 'Section';
+        const title = section.querySelector('h2, h3')?.textContent?.trim() || kicker;
+        const teaser = section.querySelector('p, li, td')?.textContent?.trim() || 'Nhấn để xem chi tiết.';
+        const trigger = document.createElement('button');
+        const content = document.createElement('div');
+        const defaultOpen = index === 0;
+
+        section.classList.add('collapsible-section');
+        if (defaultOpen) section.classList.add('open');
+
+        trigger.type = 'button';
+        trigger.className = 'collapse-trigger';
+        trigger.setAttribute('aria-expanded', defaultOpen ? 'true' : 'false');
+        trigger.innerHTML = `
+          <span class="collapse-copy">
+            <span class="collapse-kicker">${kicker}</span>
+            <span class="collapse-title">${title}</span>
+            <span class="collapse-meta">${teaser}</span>
+          </span>
+          <span class="collapse-icon">${defaultOpen ? '−' : '+'}</span>
+        `;
+
+        content.className = 'collapsible-content';
+        while (section.firstChild) {
+          content.appendChild(section.firstChild);
+        }
+
+        trigger.addEventListener('click', () => {
+          const willOpen = !section.classList.contains('open');
+          section.classList.toggle('open', willOpen);
+          trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+          trigger.querySelector('.collapse-icon').textContent = willOpen ? '−' : '+';
+        });
+
+        section.appendChild(trigger);
+        section.appendChild(content);
+        section.dataset.collapsibleReady = 'true';
+      });
+    }
+
+    function initStaticCollapsibles() {
+      initCollapsiblesForTab('roadmap');
+      initCollapsiblesForTab('theory');
+      initCollapsiblesForTab('practice');
+    }
+
+    function buildUseCasePayload(kind, target) {
+      const section = USE_CASE_LIBRARY[kind]?.[target];
+      if (!section) return null;
+      return {
+        title: section.title,
+        subtitle: kind === 'load'
+          ? 'Map loại tải vào app mua hàng, bán vé, ngân hàng, LMS và các app có peak traffic.'
+          : kind === 'api'
+            ? 'Map lớp API vào trải nghiệm web, mobile và tích hợp hệ thống để dễ hiểu backend đang ảnh hưởng user ra sao.'
+          : 'Map layer kỹ thuật vào các tình huống product thực tế để dễ nhớ và dễ debug.',
+        summary: section.summary,
+        examples: section.examples
+      };
+    }
+
+    function buildScenarioUseCasePayload(tabId) {
+      const def = getDef(tabId);
+      const scenarioKey = state.activeScenarios[tabId];
+      const scenario = def.scenarios[scenarioKey];
+      const kind = modeOf(tabId);
+      const base = buildUseCasePayload(kind, tabId);
+      if (!base) return null;
+
+      return {
+        title: `${scenario.name} -> use case ngoài đời`,
+        subtitle: `${def.name} | ${scenario.desc}`,
+        summary: `${scenario.analysis.what} Hãy map kịch bản này vào các ứng dụng thật bên dưới để biết lúc nào nên chạy bài test tương ứng và nên quan sát metric nào trước.`,
+        examples: base.examples.map(example => ({
+          ...example,
+          points: [
+            `Map trực tiếp với scenario hiện tại: ${scenario.name}.`,
+            ...example.points,
+            `Dấu hiệu cần nhìn đầu tiên: ${scenario.analysis.cause.replace(/<[^>]+>/g, '')}`
+          ]
+        }))
+      };
+    }
+
+    function openUseCaseModal(payload) {
+      if (!payload) return;
+      const modal = document.getElementById('usecase-modal');
+      document.getElementById('usecase-title').textContent = payload.title;
+      document.getElementById('usecase-subtitle').textContent = payload.subtitle;
+      document.getElementById('usecase-summary').textContent = payload.summary;
+      document.getElementById('usecase-grid').innerHTML = payload.examples.map(example => `
+        <article class="usecase-card">
+          <h3><span class="usecase-icon">${example.icon}</span><span>${example.app}</span></h3>
+          <p>${example.situation}</p>
+          <ul>${example.points.map(point => `<li>${point}</li>`).join('')}</ul>
+        </article>
+      `).join('');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeUseCaseModal() {
+      const modal = document.getElementById('usecase-modal');
+      if (!modal) return;
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    function bindUseCaseButtons() {
+      document.querySelectorAll('[data-usecase-kind][data-usecase-target]').forEach(button => {
+        button.addEventListener('click', event => {
+          event.stopPropagation();
+          openUseCaseModal(buildUseCasePayload(button.dataset.usecaseKind, button.dataset.usecaseTarget));
+        });
+      });
+
+      [...LOAD_TAB_ORDER, ...LAYER_TAB_ORDER, ...API_TAB_ORDER].forEach(tabId => {
+        const button = document.getElementById(`${tabId}-usecase`);
+        if (!button) return;
+        button.addEventListener('click', () => {
+          openUseCaseModal(buildScenarioUseCasePayload(tabId));
+        });
+      });
+
+      const modal = document.getElementById('usecase-modal');
+      const closeButton = document.getElementById('usecase-close');
+      if (closeButton) closeButton.addEventListener('click', closeUseCaseModal);
+      if (modal) {
+        modal.addEventListener('click', event => {
+          if (event.target === modal) closeUseCaseModal();
+        });
+      }
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeUseCaseModal();
+      });
+    }
+
+    function initHeroCollapsible(containerId, buttonId) {
+      const container = document.getElementById(containerId);
+      const button = document.getElementById(buttonId);
+      if (!container || !button) return;
+
+      const label = button.querySelector('span');
+      const openLabel = button.dataset.openLabel || 'Ẩn bớt';
+      const closedLabel = button.dataset.closedLabel || 'Mở rộng';
+
+      button.addEventListener('click', () => {
+        const willOpen = !container.classList.contains('open');
+        container.classList.toggle('open', willOpen);
+        button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        if (label) label.textContent = willOpen ? openLabel : closedLabel;
+        button.querySelector('.hero-toggle-icon').textContent = willOpen ? '−' : '+';
+      });
+    }
+
+    function createCharts() {
+      const allDefs = [...LOAD_TAB_ORDER.map(key => LOAD_TABS[key]), ...LAYER_TAB_ORDER.map(key => LAYERS[key]), ...API_TAB_ORDER.map(key => API_TABS[key])];
+      allDefs.forEach(def => {
+        const canvas = document.getElementById(`${def.id}-chart`);
+        if (!canvas) return;
+        state.charts[def.id] = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'Latency',
+              data: [],
+              borderColor: getComputedStyle(document.documentElement).getPropertyValue('--chart-line').trim(),
+              backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--chart-fill').trim(),
+              borderWidth: 2,
+              fill: true,
+              tension: 0.28,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+              x: { display: false },
+              y: {
+                beginAtZero: true,
+                grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() },
+                ticks: {
+                  color: getComputedStyle(document.documentElement).getPropertyValue('--text-soft').trim(),
+                  font: { family: 'IBM Plex Mono', size: 10 }
+                }
+              }
+            }
+          }
+        });
+      });
+    }
+
+    function bindDynamicTabs() {
+      const allDefs = [...LOAD_TAB_ORDER.map(key => LOAD_TABS[key]), ...LAYER_TAB_ORDER.map(key => LAYERS[key]), ...API_TAB_ORDER.map(key => API_TABS[key])];
+      allDefs.forEach(def => {
+        document.querySelectorAll(`.scenario-list[data-tab-id="${def.id}"] .scenario-item`).forEach(item => {
+          item.addEventListener('click', () => {
+            document.querySelectorAll(`.scenario-list[data-tab-id="${def.id}"] .scenario-item`).forEach(node => node.classList.remove('active'));
+            item.classList.add('active');
+            state.activeScenarios[def.id] = item.dataset.scenario;
+            document.getElementById(`${def.id}-scenario-label`).textContent = def.scenarios[item.dataset.scenario].name;
+            document.getElementById(`${def.id}-analysis-subtitle`).textContent = `Đã chọn: ${def.scenarios[item.dataset.scenario].name}`;
+            resetDynamicTab(def.id, true);
+          });
+        });
+
+        def.params.forEach(param => {
+          const input = document.getElementById(`${def.id}-${param.id}`);
+          const value = document.getElementById(`${def.id}-${param.id}-value`);
+          input.addEventListener('input', event => {
+            value.textContent = `${event.target.value}${param.suffix}`;
+          });
+        });
+
+        document.getElementById(`${def.id}-run`).addEventListener('click', () => runSimulation(def.id));
+        document.getElementById(`${def.id}-reset`).addEventListener('click', () => resetDynamicTab(def.id, false));
+      });
+    }
+
+    function getDef(tabId) {
+      return LOAD_TABS[tabId] || LAYERS[tabId] || API_TABS[tabId];
+    }
+
+    function modeOf(tabId) {
+      if (LOAD_TABS[tabId]) return 'load';
+      if (API_TABS[tabId]) return 'api';
+      return 'layer';
+    }
+
+    function simulateValue(config, index, total) {
+      let base = config.base;
+      let variance = config.variance;
+      const progress = index / Math.max(total, 1);
+
+      switch (config.trend) {
+        case 'stable':
+          variance *= 0.7;
+          break;
+        case 'stable-high':
+          base += 40;
+          variance *= 0.8;
+          break;
+        case 'gradual-increase':
+          base += progress * 260;
+          break;
+        case 'gradual-decrease':
+          base = Math.max(config.base, base - progress * 160);
+          break;
+        case 'gradual-memory-degradation':
+          base += progress * 220;
+          variance += progress * 50;
+          break;
+        case 'slow-memory-leak':
+          base += progress * 140;
+          break;
+        case 'spiky':
+          base += Math.random() > 0.68 ? 180 : -10;
+          break;
+        case 'spiky-locks':
+          if (Math.random() > 0.7) base += 240;
+          break;
+        case 'spike-then-recover':
+          if (progress > 0.2 && progress < 0.45) base += 320;
+          break;
+        case 'sudden-degradation':
+          if (progress > 0.45) base += 280;
+          break;
+        case 'sharp-degradation':
+          if (progress > 0.55) base += 480;
+          break;
+        case 'initial-spike-fail':
+          if (progress < 0.25) base += 650;
+          break;
+        case 'circuit-protect':
+          if (progress > 0.15 && progress < 0.35) base += 220;
+          if (progress > 0.35) base = Math.max(config.base + 40, base - 120);
+          break;
+        case 'queue-backlog':
+          base += progress * 380;
+          break;
+        case 'graceful-degradation':
+          if (progress > 0.6) base = Math.min(base + 160, 850);
+          break;
+        case 'hard-crash':
+          if (progress > 0.72) base = 2800 + Math.random() * 1800;
+          break;
+        case 'throttle-429':
+          if (progress > 0.55 && Math.random() > 0.68) base = 2100 + Math.random() * 900;
+          break;
+        case 'db-maxconn':
+          if (progress > 0.65) base += 340;
+          break;
+        case 'long-stable':
+          variance = 20;
+          break;
+        case 'connection-leak':
+          if (progress > 0.65) base += 240;
+          break;
+        case 'disk-full':
+          if (progress > 0.82) base += 300;
+          break;
+        case 'constant-fail':
+          base = config.base;
+          variance = config.variance;
+          break;
+        default:
+          break;
+      }
+
+      return Math.max(5, base + (Math.random() - 0.5) * variance * 2);
+    }
+
+    function percentile(values, p) {
+      if (!values.length) return 0;
+      const sorted = [...values].sort((a, b) => a - b);
+      return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
+    }
+
+    function createMetrics(tabId, def, results, latest) {
+      const mode = modeOf(tabId);
+      const scenario = def.scenarios[state.activeScenarios[tabId]];
+      const errRate = results.filter(value => value > def.scenarios[state.activeScenarios[tabId]].chart.base * 2).length / results.length * 100;
+      const avg = results.reduce((sum, value) => sum + value, 0) / results.length;
+      const p95 = percentile(results, 0.95);
+      const max = results.length ? Math.max(...results) : 0;
+      const min = results.length ? Math.min(...results) : 0;
+      const drift = results.length > 1 ? results[results.length - 1] - results[0] : 0;
+      const peakThreshold = Math.max(scenario.chart.base + scenario.chart.variance * 2.2, avg * 1.35);
+      const peakCount = results.filter(value => value >= peakThreshold).length;
+      const targetInput = document.getElementById(`${tabId}-target`) || document.getElementById(`${tabId}-budget`);
+      const target = targetInput ? Number(targetInput.value) : def.scenarios[state.activeScenarios[tabId]].chart.base * 1.8;
+      const statusClass = errRate > 10 || p95 > target * 1.6 ? 'bad' : errRate > 4 || p95 > target * 1.15 ? 'warn' : 'ok';
+      const statusSymbol = statusClass === 'bad' ? '❌' : statusClass === 'warn' ? '⚠️' : '✅';
+
+      const metrics = {
+        avg: Math.round(avg),
+        p95: Math.round(p95),
+        err: errRate.toFixed(1),
+        status: statusSymbol,
+        statusClass,
+        max: Math.round(max),
+        min: Math.round(min),
+        drift: Math.round(drift),
+        peakCount,
+        vus: document.getElementById(`${tabId}-vus`) ? document.getElementById(`${tabId}-vus`).value : undefined,
+        fps: Math.max(18, 60 - Math.round(p95 / 12)),
+        qps: Math.max(1, Math.round(results.length / Math.max(1, results.length / 10))),
+        hit: Math.max(35, Math.round(100 - errRate * 2.2)),
+        lag: Math.max(0, Math.round(errRate * 65)),
+        cpu: Math.min(99, Math.round(38 + errRate * 4 + p95 / 20)),
+        rps: Math.max(1, Math.round(220 - Math.min(160, p95 / 3))),
+        conns: document.getElementById(`${tabId}-conns`) ? document.getElementById(`${tabId}-conns`).value : Math.round(800 + errRate * 140),
+        idx: Math.max(1, Math.round(errRate * 2.2 + latest / 180))
+      };
+
+      if (mode === 'layer') {
+        if (tabId === 'database') metrics.qps = Math.max(10, Math.round(6000 / Math.max(40, p95)));
+        if (tabId === 'cache') metrics.hit = Math.max(40, Math.round(99 - errRate * 2.5));
+        if (tabId === 'mq') metrics.lag = Math.round(errRate * 90 + results.length * 1.6);
+        if (tabId === 'cdn') metrics.hit = Math.max(20, Math.round(100 - errRate * 2));
+        if (tabId === 'infra') metrics.cpu = Math.min(99, Math.round(45 + errRate * 3 + p95 / 18));
+        if (tabId === 'auth') metrics.rps = Math.max(10, Math.round(420 - p95));
+        if (tabId === 'websocket') metrics.conns = document.getElementById(`${tabId}-conns`) ? Number(document.getElementById(`${tabId}-conns`).value) : metrics.conns;
+        if (tabId === 'search') metrics.idx = Math.max(1, Math.round(errRate * 2 + p95 / 40));
+      }
+
+      return metrics;
+    }
+
+    function summarizeObservedBehavior(scenario, metrics) {
+      const stableTrends = ['stable', 'stable-high', 'long-stable'];
+      const improvingTrends = ['gradual-decrease'];
+      const volatileTrends = ['spiky', 'spiky-locks', 'spike-then-recover', 'throttle-429', 'hard-crash', 'initial-spike-fail'];
+
+      if (stableTrends.includes(scenario.chart.trend) && metrics.peakCount === 0) {
+        return 'Quan sát từ chart: đường biểu diễn khá mượt, dao động hẹp và không có peak đáng kể.';
+      }
+
+      if (stableTrends.includes(scenario.chart.trend) && metrics.peakCount > 0 && metrics.statusClass === 'ok') {
+        return `Quan sát từ chart: nhìn chung vẫn ổn định nhưng có ${metrics.peakCount} peak ngắn, nên hiểu đây là vài nhịp chao nhẹ chứ không phải hệ thống đã mất kiểm soát.`;
+      }
+
+      if (improvingTrends.includes(scenario.chart.trend) || metrics.drift < -Math.max(30, scenario.chart.variance * 1.5)) {
+        return 'Quan sát từ chart: đoạn đầu chậm hơn rõ, sau đó đường biểu diễn hạ dần khi hệ thống ấm lên hoặc recover.';
+      }
+
+      if (volatileTrends.includes(scenario.chart.trend) || metrics.peakCount >= 3) {
+        return `Quan sát từ chart: đường biểu diễn có nhiều peak rõ rệt, cho thấy độ trễ không đều và người dùng có thể cảm nhận lúc nhanh lúc chậm.`;
+      }
+
+      if (metrics.drift > Math.max(40, scenario.chart.variance * 1.8)) {
+        return 'Quan sát từ chart: latency tăng dần theo thời gian, nghĩa là hệ thống càng chạy càng nặng hơn thay vì giữ ổn định.';
+      }
+
+      return `Quan sát từ chart: độ trễ có dao động ở mức vừa phải, với đỉnh cao nhất khoảng ${metrics.max}ms và vùng chạy phổ biến quanh ${metrics.avg}-${metrics.p95}ms.`;
+    }
+
+    function summarizePlainLanguage(tabId, scenario, metrics) {
+      const noun = modeOf(tabId) === 'api' ? 'API' : modeOf(tabId) === 'layer' ? 'thành phần hệ thống này' : 'bài test này';
+
+      if (metrics.statusClass === 'ok' && metrics.err <= 1 && metrics.p95 <= metrics.avg * 1.35) {
+        return `${noun.charAt(0).toUpperCase() + noun.slice(1)} đang chạy khá êm. Phần lớn người dùng sẽ thấy phản hồi ổn định và ít gặp tình trạng chờ quá lâu.`;
+      }
+
+      if (metrics.statusClass === 'ok' && metrics.peakCount > 0) {
+        return `${noun.charAt(0).toUpperCase() + noun.slice(1)} nhìn chung vẫn ổn, nhưng có vài nhịp chao ngắn. Nghĩa là đa số lúc dùng sẽ ổn, chỉ thỉnh thoảng có cảm giác khựng nhẹ.`;
+      }
+
+      if (metrics.statusClass === 'warn') {
+        return `${noun.charAt(0).toUpperCase() + noun.slice(1)} chưa tới mức gãy, nhưng đã có dấu hiệu chậm thấy rõ. Nếu tải tăng thêm hoặc kéo dài lâu hơn, người dùng sẽ bắt đầu khó chịu.`;
+      }
+
+      return `${noun.charAt(0).toUpperCase() + noun.slice(1)} đang ở vùng đáng lo: vừa chậm vừa có khả năng fail. Với người dùng thật, đây là kiểu trải nghiệm dễ tạo cảm giác hệ thống đang lỗi.`;
+    }
+
+    function summarizeUserImpact(tabId, scenario, metrics) {
+      if (metrics.statusClass === 'ok' && metrics.err <= 1) {
+        return 'Người dùng đa phần sẽ hoàn thành thao tác bình thường. Business gần như chưa bị ảnh hưởng rõ ở lần chạy này.';
+      }
+
+      if (metrics.statusClass === 'warn' && Number(metrics.err) < 5) {
+        return 'Người dùng vẫn làm được việc, nhưng sẽ thấy loading lâu hơn hoặc phản hồi thiếu mượt. Về business, conversion và mức hài lòng có thể bắt đầu giảm nếu trạng thái này lặp lại ở giờ cao điểm.';
+      }
+
+      if (metrics.statusClass === 'warn') {
+        return 'Một phần người dùng sẽ bắt đầu gặp timeout hoặc thao tác chậm bất thường. Với business, đây là vùng có nguy cơ tạo ticket hỗ trợ hoặc bỏ dở thao tác.';
+      }
+
+      return 'Người dùng thật có thể thấy màn hình quay rất lâu, lỗi xuất hiện rõ hơn hoặc thao tác không hoàn thành. Với business, đây là trạng thái có thể làm mất đơn, mất phiên đăng nhập hoặc giảm niềm tin vào hệ thống.';
+    }
+
+    function applyMetrics(tabId, def, metrics) {
+      def.stats.forEach(stat => {
+        const element = document.getElementById(`${tabId}-stat-${stat.id}`);
+        if (!element) return;
+        if (stat.id === 'status') {
+          element.textContent = metrics.status;
+          element.className = `stat-value ${metrics.statusClass}`;
+        } else if (stat.id === 'err') {
+          element.textContent = metrics.err;
+          element.className = `stat-value ${metrics.statusClass}`;
+        } else {
+          element.textContent = metrics[stat.id];
+          element.className = 'stat-value';
+        }
+      });
+    }
+
+    function updateAnalysis(tabId, scenario, metrics) {
+      const observedSummary = summarizeObservedBehavior(scenario, metrics);
+      document.getElementById(`${tabId}-plain-summary`).textContent = summarizePlainLanguage(tabId, scenario, metrics);
+      document.getElementById(`${tabId}-impact-summary`).textContent = summarizeUserImpact(tabId, scenario, metrics);
+      document.getElementById(`${tabId}-what`).innerHTML = `${observedSummary}<br><br>${scenario.analysis.what}<br><br><strong>Kết quả mô phỏng:</strong> Avg ${metrics.avg}ms, <strong>P95</strong> ${metrics.p95}ms, Error ${metrics.err}%, Peak ${metrics.max}ms`;
+      document.getElementById(`${tabId}-cause`).innerHTML = scenario.analysis.cause;
+      document.getElementById(`${tabId}-verdict`).innerHTML = scenario.analysis.verdict;
+      document.getElementById(`${tabId}-recs`).innerHTML = `<ul>${scenario.analysis.recs.map(item => `<li>${item}</li>`).join('')}</ul>`;
+      const icon = document.getElementById(`${tabId}-analysis-icon`);
+      icon.textContent = metrics.status;
+      icon.className = 'analysis-icon';
+      if (metrics.statusClass === 'ok') icon.style.color = 'var(--success)';
+      if (metrics.statusClass === 'warn') icon.style.color = 'var(--warning)';
+      if (metrics.statusClass === 'bad') icon.style.color = 'var(--danger)';
+      document.getElementById(`${tabId}-analysis-subtitle`).textContent = scenario.name;
+    }
+
+    function resetDynamicTab(tabId, softOnly) {
+      const def = getDef(tabId);
+      if (!def) return;
+      def.stats.forEach(stat => {
+        const element = document.getElementById(`${tabId}-stat-${stat.id}`);
+        if (element) {
+          element.textContent = '—';
+          element.className = 'stat-value';
+        }
+      });
+      document.getElementById(`${tabId}-bar`).style.width = '0%';
+      document.getElementById(`${tabId}-progress`).textContent = '0%';
+      document.getElementById(`${tabId}-actors`).innerHTML = '';
+      if (state.charts[tabId]) {
+        state.charts[tabId].data.labels = [];
+        state.charts[tabId].data.datasets[0].data = [];
+        state.charts[tabId].update('none');
+      }
+      if (!softOnly) {
+        document.getElementById(`${tabId}-plain-summary`).innerHTML = '<em>Chạy demo để xem bản dịch dễ hiểu.</em>';
+        document.getElementById(`${tabId}-impact-summary`).innerHTML = '<em>Sau khi chạy xong, phần này sẽ nói theo góc nhìn user/business.</em>';
+        document.getElementById(`${tabId}-what`).innerHTML = '<em>Chạy demo để xem kết quả.</em>';
+        document.getElementById(`${tabId}-cause`).innerHTML = '<em>Đang chờ phân tích.</em>';
+        document.getElementById(`${tabId}-verdict`).innerHTML = '<em>Chưa có đánh giá.</em>';
+        document.getElementById(`${tabId}-recs`).innerHTML = '<em>Recommendations sẽ xuất hiện sau khi chạy.</em>';
+        document.getElementById(`${tabId}-analysis-icon`).textContent = '🔍';
+        document.getElementById(`${tabId}-analysis-icon`).style.color = 'var(--text)';
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function runSimulation(tabId) {
+      if (state.running[tabId]) return;
+      const def = getDef(tabId);
+      const scenario = def.scenarios[state.activeScenarios[tabId]];
+      state.running[tabId] = true;
+      resetDynamicTab(tabId, false);
+
+      const runButton = document.getElementById(`${tabId}-run`);
+      runButton.disabled = true;
+      runButton.textContent = '⏳ Đang chạy...';
+
+      const duration = Number(document.getElementById(`${tabId}-duration`).value);
+      const chart = state.charts[tabId];
+      const actors = document.getElementById(`${tabId}-actors`);
+      const actorMode = modeOf(tabId);
+      const actorMax = actorMode === 'load' || actorMode === 'api' ? Math.min(60, Number(document.getElementById(`${tabId}-vus`)?.value || 30)) : 36;
+      const actorClass = def.actorShape === 'square' ? 'actor square' : 'actor';
+      const results = [];
+
+      for (let index = 0; index < duration; index += 1) {
+        const progress = Math.round(((index + 1) / duration) * 100);
+        document.getElementById(`${tabId}-progress`).textContent = `${progress}%`;
+        document.getElementById(`${tabId}-bar`).style.width = `${progress}%`;
+
+        if (index % 2 === 0 && actors.children.length < actorMax) {
+          const actor = document.createElement('div');
+          actor.className = actorClass;
+          actor.textContent = actorMode === 'load' || actorMode === 'api' ? '👤' : '■';
+          actors.appendChild(actor);
+        }
+
+        let value = simulateValue(scenario.chart, index, duration);
+        const isError = Math.random() < scenario.chart.errorRate;
+        if (isError) {
+          const isStableLike = ['stable', 'stable-high', 'long-stable'].includes(scenario.chart.trend);
+          const errorMultiplier = isStableLike ? 0.35 : 0.9;
+          const errorOffset = isStableLike ? 90 : 220;
+          value += value * errorMultiplier + errorOffset;
+          if (actors.children.length) {
+            const node = actors.children[Math.floor(Math.random() * actors.children.length)];
+            node.classList.add('error');
+            setTimeout(() => node.classList.remove('error'), 300);
+          }
+        }
+
+        results.push(value);
+        const metrics = createMetrics(tabId, def, results, value);
+        applyMetrics(tabId, def, metrics);
+
+        chart.data.labels.push(index);
+        chart.data.datasets[0].data.push(value);
+        if (chart.data.labels.length > 50) {
+          chart.data.labels.shift();
+          chart.data.datasets[0].data.shift();
+        }
+        chart.update('none');
+
+        await sleep(actorMode === 'load' || actorMode === 'api' ? 38 : 42);
+      }
+
+      const finalMetrics = createMetrics(tabId, def, results, results[results.length - 1]);
+      updateAnalysis(tabId, scenario, finalMetrics);
+      state.running[tabId] = false;
+      runButton.disabled = false;
+      runButton.textContent = '▶ Chạy Lại';
+    }
+
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(button => {
+        button.classList.toggle('active', button.dataset.tab === tabId);
+      });
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.toggle('active', tab.id === `tab-${tabId}`);
+      });
+      if (state.charts[tabId]) {
+        setTimeout(() => state.charts[tabId].resize(), 50);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = state.theme === 'dark' ? 'dark' : '';
+      document.getElementById('theme-toggle').textContent = state.theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+      Object.values(state.charts).forEach(chart => updateChartTheme(chart));
+    }
+
+    function updateChartTheme(chart) {
+      const styles = getComputedStyle(document.documentElement);
+      const line = styles.getPropertyValue('--chart-line').trim();
+      const fill = styles.getPropertyValue('--chart-fill').trim();
+      const border = styles.getPropertyValue('--border').trim();
+      const text = styles.getPropertyValue('--text-soft').trim();
+      chart.data.datasets[0].borderColor = line;
+      chart.data.datasets[0].backgroundColor = fill;
+      chart.options.scales.y.grid.color = border;
+      chart.options.scales.y.ticks.color = text;
+      chart.update('none');
+    }
+
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    buildTabs();
+    renderApp();
+    initHeroCollapsible('hero-main-collapsible', 'hero-main-toggle');
+    initHeroCollapsible('hero-side-collapsible', 'hero-side-toggle');
+    initStaticCollapsibles();
+    createCharts();
+    bindDynamicTabs();
+    bindUseCaseButtons();
+  </script>
+</body>
+</html>
