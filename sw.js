@@ -1,4 +1,4 @@
-const CACHE_NAME = 'csv-editor-v6'; // Tăng version để ép cập nhật
+const CACHE_NAME = 'csv-editor-v7'; // Tăng version để ép cập nhật
 const ASSETS = [
   './',
   './index.html',
