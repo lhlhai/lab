@@ -27,7 +27,6 @@
             height: 100vh;
         }
 
-        /* Toolbar */
         header {
             background: var(--white);
             padding: 0.75rem 1rem;
@@ -62,25 +61,12 @@
             gap: 0.5rem;
         }
 
-        .btn:hover {
-            background: #f1f5f9;
-        }
+        .btn:hover { background: #f1f5f9; }
+        .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary:hover { background: var(--primary-hover); }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
+        #fileInput { display: none; }
 
-        .btn-primary:hover {
-            background: var(--primary-hover);
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        /* Table Area */
         main {
             flex: 1;
             overflow: auto;
@@ -93,17 +79,18 @@
             background: var(--white);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             border-radius: 8px;
-            overflow: hidden;
+            table-layout: auto;
         }
 
         th, td {
             border: 1px solid var(--border);
             padding: 0.75rem;
             text-align: left;
-            min-width: 120px;
-            max-width: 300px;
+            min-width: 100px;
+            max-width: 400px;
             white-space: pre-wrap;
             word-break: break-word;
+            vertical-align: top;
         }
 
         th {
@@ -111,14 +98,15 @@
             font-weight: 600;
             position: sticky;
             top: 0;
+            z-index: 10;
         }
 
         td:focus {
             outline: 2px solid var(--primary);
             background: #eff6ff;
+            z-index: 5;
         }
 
-        /* Toast Notification */
         #toast {
             position: fixed;
             bottom: 2rem;
@@ -138,7 +126,6 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
-        /* Empty State */
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -146,9 +133,7 @@
         }
 
         @media (max-width: 600px) {
-            header {
-                padding: 0.5rem;
-            }
+            header { padding: 0.5rem; }
             .logo { width: 100%; margin-bottom: 0.5rem; }
             .btn { flex: 1; justify-content: center; }
         }
@@ -161,7 +146,7 @@
         <button class="btn" onclick="document.getElementById('fileInput').click()">
             📂 Tải CSV mới
         </button>
-        <input type="file" id="fileInput" accept=".csv">
+        <input type="file" id="fileInput" accept=".csv,text/csv">
         <button class="btn btn-primary" onclick="exportCSV()">
             💾 Xuất CSV
         </button>
@@ -176,25 +161,22 @@
     <div id="toast">Thông báo</div>
 
     <script>
-        // Cấu hình tính năng
         const CONFIG = {
             DB_NAME: 'CSVEditorDB',
             STORE_NAME: 'csv_data',
             VERSION: 1
         };
 
-        let currentData = []; // Mảng 2 chiều chứa dữ liệu CSV
+        let currentData = [];
 
-        // 1. Service Worker Registration
+        // 1. Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('SW registered'))
-                    .catch(err => console.log('SW error', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error', err));
             });
         }
 
-        // 2. IndexedDB Logic
+        // 2. IndexedDB
         const dbPromise = new Promise((resolve, reject) => {
             const request = indexedDB.open(CONFIG.DB_NAME, CONFIG.VERSION);
             request.onupgradeneeded = (e) => {
@@ -210,49 +192,65 @@
         async function saveData(data) {
             const db = await dbPromise;
             const tx = db.transaction(CONFIG.STORE_NAME, 'readwrite');
-            tx.objectStore(CONFIG.STORE_NAME).put(data, 'last_session');
-            return tx.complete;
+            const store = tx.objectStore(CONFIG.STORE_NAME);
+            return new Promise((resolve, reject) => {
+                const request = store.put(data, 'last_session');
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
         }
 
         async function loadSavedData() {
             const db = await dbPromise;
             return new Promise((resolve) => {
-                const request = db.transaction(CONFIG.STORE_NAME).objectStore(CONFIG.STORE_NAME).get('last_session');
+                const tx = db.transaction(CONFIG.STORE_NAME, 'readonly');
+                const store = tx.objectStore(CONFIG.STORE_NAME);
+                const request = store.get('last_session');
                 request.onsuccess = () => resolve(request.result);
+                request.onerror = () => resolve(null);
             });
         }
 
-        // 3. CSV Parsing Logic (Xử lý quote, comma, newline)
+        // 3. CSV Parser (Improved)
         function parseCSV(text) {
             const result = [];
             let row = [];
             let cell = '';
             let inQuotes = false;
 
+            // Xử lý xuống dòng thống nhất
+            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
-                const next = text[i+1];
+                const nextChar = text[i + 1];
 
-                if (char === '"' && inQuotes && next === '"') {
-                    cell += '"';
-                    i++;
-                } else if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    row.push(cell);
-                    cell = '';
-                } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                    if (cell !== '' || row.length > 0) {
+                if (inQuotes) {
+                    if (char === '"' && nextChar === '"') {
+                        cell += '"';
+                        i++;
+                    } else if (char === '"') {
+                        inQuotes = false;
+                    } else {
+                        cell += char;
+                    }
+                } else {
+                    if (char === '"') {
+                        inQuotes = true;
+                    } else if (char === ',') {
+                        row.push(cell);
+                        cell = '';
+                    } else if (char === '\n') {
                         row.push(cell);
                         result.push(row);
+                        row = [];
+                        cell = '';
+                    } else {
+                        cell += char;
                     }
-                    row = [];
-                    cell = '';
-                    if (char === '\r' && next === '\n') i++;
-                } else {
-                    cell += char;
                 }
             }
+            // Add last cell/row
             if (cell !== '' || row.length > 0) {
                 row.push(cell);
                 result.push(row);
@@ -264,7 +262,7 @@
             return data.map(row => 
                 row.map(cell => {
                     let c = String(cell);
-                    if (c.includes(',') || c.includes('"') || c.includes('\n') || c.includes('\r')) {
+                    if (c.includes(',') || c.includes('"') || c.includes('\n')) {
                         return `"${c.replace(/"/g, '""')}"`;
                     }
                     return c;
@@ -272,7 +270,7 @@
             ).join('\n');
         }
 
-        // 4. UI Logic
+        // 4. UI
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.textContent = msg;
@@ -287,31 +285,34 @@
             app.innerHTML = '';
 
             const table = document.createElement('table');
-            
-            // Xử lý Header
             const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // Header
             const headerRow = document.createElement('tr');
-            const firstRow = data[0];
-            
-            // Giả định dòng đầu là header, nếu không có dữ liệu ta tạo header mặc định
-            firstRow.forEach((val, idx) => {
+            data[0].forEach((val, idx) => {
                 const th = document.createElement('th');
                 th.textContent = val || `Cột ${idx + 1}`;
                 headerRow.appendChild(th);
             });
             thead.appendChild(headerRow);
-            table.appendChild(thead);
 
-            // Xử lý Body
-            const tbody = document.createElement('tbody');
+            // Body
             for (let r = 1; r < data.length; r++) {
                 const tr = document.createElement('tr');
-                for (let c = 0; c < data[r].length; c++) {
+                // Đảm bảo số cột khớp với header
+                const rowData = data[r];
+                for (let c = 0; c < data[0].length; c++) {
                     const td = document.createElement('td');
-                    td.textContent = data[r][c];
+                    td.textContent = rowData[c] || '';
                     td.contentEditable = true;
-                    // Sự kiện lưu khi chỉnh sửa
-                    td.onblur = () => updateCell(r, c, td.textContent);
+                    td.onblur = () => {
+                        if (currentData[r][c] !== td.textContent) {
+                            currentData[r][c] = td.textContent;
+                            saveData(currentData);
+                            showToast('Đã lưu thay đổi');
+                        }
+                    };
                     td.onkeydown = (e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
@@ -322,66 +323,72 @@
                 }
                 tbody.appendChild(tr);
             }
+
+            table.appendChild(thead);
             table.appendChild(tbody);
             app.appendChild(table);
         }
 
-        function updateCell(r, c, value) {
-            if (currentData[r][c] !== value) {
-                currentData[r][c] = value;
-                saveData(currentData);
-                showToast('Đã tự động lưu thay đổi');
-            }
-        }
-
-        // 5. File Operations
-        document.getElementById('fileInput').onchange = async (e) => {
+        // 5. File Input Handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             if (currentData.length > 0) {
-                if (!confirm('Bạn có chắc chắn muốn tải file mới? Dữ liệu hiện tại sẽ bị ghi đè.')) {
-                    e.target.value = '';
+                if (!confirm('Ghi đè dữ liệu hiện tại?')) {
+                    this.value = '';
                     return;
                 }
             }
 
             const reader = new FileReader();
             reader.onload = async (event) => {
-                const text = event.target.result;
-                const data = parseCSV(text);
-                renderTable(data);
-                await saveData(data);
-                showToast('Đã tải và lưu CSV mới');
+                try {
+                    const text = event.target.result;
+                    const data = parseCSV(text);
+                    if (data.length > 0) {
+                        renderTable(data);
+                        await saveData(data);
+                        showToast('Đã tải file thành công');
+                    } else {
+                        showToast('File CSV trống hoặc lỗi định dạng');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showToast('Lỗi khi đọc file CSV');
+                }
             };
+            reader.onerror = () => showToast('Lỗi đọc file');
             reader.readAsText(file);
-            e.target.value = ''; // Reset input
-        };
+            this.value = '';
+        });
 
         function exportCSV() {
             if (currentData.length === 0) {
-                showToast('Không có dữ liệu để xuất');
+                showToast('Không có dữ liệu');
                 return;
             }
             const csvContent = stringifyCSV(currentData);
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'edited_data.csv');
-            link.style.visibility = 'hidden';
+            link.href = url;
+            link.download = 'data_export.csv';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            showToast('Đã xuất file CSV');
+            showToast('Đã xuất file');
         }
 
-        // Khởi tạo khi load trang
         window.onload = async () => {
-            const saved = await loadSavedData();
-            if (saved) {
-                renderTable(saved);
-                showToast('Đã khôi phục phiên làm việc');
+            try {
+                const saved = await loadSavedData();
+                if (saved && saved.length > 0) {
+                    renderTable(saved);
+                    showToast('Đã khôi phục dữ liệu cũ');
+                }
+            } catch (e) {
+                console.error("Load error", e);
             }
         };
     </script>
