@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Editor Pro v3 (Mới nhất)</title>
+    <title>CSV Editor Pro v4 (Mới nhất)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <style>
@@ -33,7 +33,7 @@
 
         .logo { font-weight: bold; margin-right: auto; color: var(--primary); }
 
-        .btn {
+        .btn, .select-input {
             padding: 0.5rem 0.8rem; border-radius: 6px; border: 1px solid var(--border);
             background: var(--white); cursor: pointer; font-size: 0.85rem;
             display: flex; align-items: center; gap: 0.4rem;
@@ -41,6 +41,10 @@
         .btn:hover { background: #f1f5f9; }
         .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
         .btn-sample { color: #059669; border-color: #059669; }
+
+        .delimiter-box {
+            display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;
+        }
 
         #fileInput { display: none; }
 
@@ -52,13 +56,12 @@
         }
         th, td {
             border: 1px solid var(--border); padding: 0.6rem;
-            text-align: left; min-width: 80px; max-width: 300px;
+            text-align: left; min-width: 80px; max-width: 400px;
             white-space: pre-wrap; word-break: break-word;
         }
         th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; }
         td:focus { outline: 2px solid var(--primary); background: #eff6ff; }
 
-        /* Debug Console */
         #debug {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #1e293b; color: #38bdf8;
@@ -81,18 +84,28 @@
 <body>
 
     <header>
-        <div class="logo">CSV Editor Pro v3</div>
-        <button class="btn btn-sample" onclick="loadSampleData()">✨ Dữ liệu mẫu</button>
-        <button class="btn" onclick="triggerFileInput()">📂 Chọn File CSV</button>
-        <input type="file" id="fileInput" accept=".csv, text/csv, .txt">
-        <button class="btn btn-primary" onclick="exportCSV()">💾 Xuất File</button>
+        <div class="logo">CSV Editor Pro v4</div>
+        
+        <div class="delimiter-box">
+            <span>Dấu phân cách:</span>
+            <select id="delimiter" class="select-input">
+                <option value=",">Dấu phẩy (,)</option>
+                <option value=";">Dấu chấm phẩy (;)</option>
+                <option value="	">Tab</option>
+            </select>
+        </div>
+
+        <button class="btn btn-sample" onclick="loadSampleData()">✨ Mẫu</button>
+        <button class="btn" onclick="triggerFileInput()">📂 Chọn File</button>
+        <input type="file" id="fileInput" accept=".csv, .txt, .tsv">
+        <button class="btn btn-primary" onclick="exportCSV()">💾 Xuất</button>
         <button class="btn" onclick="toggleDebug()">🛠 Debug</button>
     </header>
 
     <main id="app">
         <div class="empty-state">
-            <h3>Chào mừng!</h3>
-            <p>Hãy chọn một file CSV từ máy tính hoặc dùng "Dữ liệu mẫu" để thử nghiệm.</p>
+            <h3>Sẵn sàng!</h3>
+            <p>Chọn dấu phân cách tương ứng với file của bạn trước khi tải.</p>
         </div>
     </main>
 
@@ -103,7 +116,6 @@
         const CONFIG = { DB: 'CSV_PRO_DB', STORE: 'data', VER: 1 };
         let currentData = [];
 
-        // --- HỆ THỐNG LOG ---
         function log(msg, isError = false) {
             const d = document.getElementById('debug');
             const time = new Date().toLocaleTimeString();
@@ -112,8 +124,7 @@
             line.textContent = `[${time}] ${msg}`;
             d.appendChild(line);
             d.scrollTop = d.scrollHeight;
-            console.log(msg);
-            if (isError) showToast("❌ Lỗi: " + msg);
+            if (isError) showToast("❌ " + msg);
         }
 
         function toggleDebug() {
@@ -128,21 +139,18 @@
             setTimeout(() => t.style.display = 'none', 3000);
         }
 
-        // --- DATABASE ---
+        // DATABASE
         const dbPromise = new Promise((resolve) => {
             const req = indexedDB.open(CONFIG.DB, CONFIG.VER);
             req.onupgradeneeded = (e) => e.target.result.createObjectStore(CONFIG.STORE);
             req.onsuccess = (e) => resolve(e.target.result);
-            req.onerror = () => log("Không thể mở IndexedDB", true);
+            req.onerror = () => log("DB Error", true);
         });
 
         async function dbSave(data) {
-            try {
-                const db = await dbPromise;
-                const tx = db.transaction(CONFIG.STORE, 'readwrite');
-                tx.objectStore(CONFIG.STORE).put(data, 'session');
-                log("Đã lưu vào bộ nhớ trình duyệt");
-            } catch (e) { log("Lỗi lưu DB: " + e.message, true); }
+            const db = await dbPromise;
+            const tx = db.transaction(CONFIG.STORE, 'readwrite');
+            tx.objectStore(CONFIG.STORE).put(data, 'session');
         }
 
         async function dbLoad() {
@@ -154,13 +162,11 @@
             });
         }
 
-        // --- CSV ENGINE ---
-        function parseCSV(text) {
-            log("Đang xử lý " + text.length + " ký tự...");
+        // CSV PARSER
+        function parseCSV(text, delimiter) {
+            log(`Đang xử lý với dấu phân cách: [${delimiter === '	' ? 'TAB' : delimiter}]`);
             const result = [];
             let row = [], cell = '', inQuotes = false;
-            
-            // Chuẩn hóa xuống dòng
             const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
             for (let i = 0; i < cleanText.length; i++) {
@@ -171,7 +177,7 @@
                     else cell += c;
                 } else {
                     if (c === '"') inQuotes = true;
-                    else if (c === ',') { row.push(cell); cell = ''; }
+                    else if (c === delimiter) { row.push(cell); cell = ''; }
                     else if (c === '\n') { 
                         row.push(cell); result.push(row); 
                         row = []; cell = ''; 
@@ -180,11 +186,9 @@
                 }
             }
             if (cell || row.length > 0) { row.push(cell); result.push(row); }
-            log("Xử lý xong: " + result.length + " dòng");
             return result;
         }
 
-        // --- UI ---
         function renderTable(data) {
             if (!data || data.length === 0) return;
             currentData = data;
@@ -192,7 +196,6 @@
             app.innerHTML = '';
             const table = document.createElement('table');
             
-            // Header
             const thead = document.createElement('thead');
             const hRow = document.createElement('tr');
             (data[0] || []).forEach((h, i) => {
@@ -203,7 +206,6 @@
             thead.appendChild(hRow);
             table.appendChild(thead);
 
-            // Body
             const tbody = document.createElement('tbody');
             for (let r = 1; r < data.length; r++) {
                 const tr = document.createElement('tr');
@@ -225,37 +227,32 @@
             app.appendChild(table);
         }
 
-        // --- ACTIONS ---
-        function triggerFileInput() {
-            log("Mở trình chọn file...");
-            document.getElementById('fileInput').click();
-        }
+        function triggerFileInput() { document.getElementById('fileInput').click(); }
 
         document.getElementById('fileInput').onchange = function(e) {
             const file = e.target.files[0];
-            if (!file) { log("Không có file nào được chọn"); return; }
-            log(`Đã chọn file: ${file.name} (${file.size} bytes)`);
-
+            if (!file) return;
+            const delimiter = document.getElementById('delimiter').value;
+            
             const reader = new FileReader();
             reader.onload = (evt) => {
                 try {
-                    const data = parseCSV(evt.target.result);
+                    const data = parseCSV(evt.target.result, delimiter);
                     renderTable(data);
                     dbSave(data);
-                    showToast("Tải file thành công!");
-                } catch (err) { log("Lỗi xử lý file: " + err.message, true); }
+                    showToast("Tải thành công!");
+                } catch (err) { log("Lỗi: " + err.message, true); }
             };
-            reader.onerror = () => log("Lỗi FileReader", true);
             reader.readAsText(file);
-            this.value = ''; // Reset
+            this.value = '';
         };
 
         function loadSampleData() {
             const sample = [
-                ["Tên", "Tuổi", "Công việc", "Ghi chú"],
-                ["Nguyễn Văn A", "25", "Kỹ sư", "Thích \"code\""],
-                ["Trần Thị B", "30", "Thiết kế", "Làm việc\ntừ xa"],
-                ["Lê Văn C", "22", "Sinh viên", "Hà Nội, VN"]
+                ["Sản phẩm", "Giá", "Kho", "Ghi chú"],
+                ["Táo", "20000", "100", "Nhập khẩu"],
+                ["Cam", "15000", "50", "Đặc sản"],
+                ["Bưởi", "40000", "20", "Năm roi"]
             ];
             renderTable(sample);
             dbSave(sample);
@@ -263,27 +260,21 @@
         }
 
         function exportCSV() {
-            if (currentData.length === 0) return showToast("Không có dữ liệu");
-            const csv = currentData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+            if (currentData.length === 0) return;
+            const delimiter = document.getElementById('delimiter').value;
+            const csv = currentData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(delimiter)).join('\n');
             const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'data.csv';
+            a.download = 'data_export.csv';
             a.click();
-            showToast("Đã xuất file");
         }
 
-        // Init
         window.onload = async () => {
-            log("Ứng dụng đã sẵn sàng");
             const saved = await dbLoad();
-            if (saved) {
-                log("Khôi phục dữ liệu cũ...");
-                renderTable(saved);
-            }
-            
+            if (saved) renderTable(saved);
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js').then(() => log("SW Active"));
+                navigator.serviceWorker.register('sw.js').then(() => log("v4 Online"));
             }
         };
     </script>
