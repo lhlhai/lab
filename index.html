@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Editor Pro v4 (Mới nhất)</title>
+    <title>CSV Editor Pro v5 (Mới nhất)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <style>
@@ -40,7 +40,7 @@
         }
         .btn:hover { background: #f1f5f9; }
         .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
-        .btn-sample { color: #059669; border-color: #059669; }
+        .btn-paste { color: #d97706; border-color: #d97706; }
 
         .delimiter-box {
             display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;
@@ -79,25 +79,29 @@
         }
 
         .empty-state { text-align: center; padding: 3rem; color: #64748b; }
+        
+        .instructions {
+            font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">CSV Editor Pro v4</div>
+        <div class="logo">CSV Editor Pro v5</div>
         
         <div class="delimiter-box">
             <span>Dấu phân cách:</span>
             <select id="delimiter" class="select-input">
                 <option value=",">Dấu phẩy (,)</option>
                 <option value=";">Dấu chấm phẩy (;)</option>
-                <option value="	">Tab</option>
+                <option value="	">Tab (TSV)</option>
             </select>
         </div>
 
-        <button class="btn btn-sample" onclick="loadSampleData()">✨ Mẫu</button>
-        <button class="btn" onclick="triggerFileInput()">📂 Chọn File</button>
-        <input type="file" id="fileInput" accept=".csv, .txt, .tsv">
+        <button class="btn btn-paste" onclick="pasteFromClipboard()">📋 Dán từ Clipboard</button>
+        <button class="btn" onclick="triggerFileInput()">📂 Mở File</button>
+        <input type="file" id="fileInput" accept=".csv, .txt, .tsv, .dat, .tab">
         <button class="btn btn-primary" onclick="exportCSV()">💾 Xuất</button>
         <button class="btn" onclick="toggleDebug()">🛠 Debug</button>
     </header>
@@ -105,7 +109,8 @@
     <main id="app">
         <div class="empty-state">
             <h3>Sẵn sàng!</h3>
-            <p>Chọn dấu phân cách tương ứng với file của bạn trước khi tải.</p>
+            <p>Mở file (.csv, .txt, .tsv, .dat) hoặc copy từ Excel/Sheets rồi nhấn <b>"Dán từ Clipboard"</b>.</p>
+            <div class="instructions">Mẹo: Bạn cũng có thể nhấn <b>Ctrl + V</b> trực tiếp trên trang này.</div>
         </div>
     </main>
 
@@ -164,7 +169,6 @@
 
         // CSV PARSER
         function parseCSV(text, delimiter) {
-            log(`Đang xử lý với dấu phân cách: [${delimiter === '	' ? 'TAB' : delimiter}]`);
             const result = [];
             let row = [], cell = '', inQuotes = false;
             const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -227,36 +231,61 @@
             app.appendChild(table);
         }
 
+        // ACTIONS
         function triggerFileInput() { document.getElementById('fileInput').click(); }
 
         document.getElementById('fileInput').onchange = function(e) {
             const file = e.target.files[0];
             if (!file) return;
             const delimiter = document.getElementById('delimiter').value;
+            log(`Mở file: ${file.name}`);
             
             const reader = new FileReader();
             reader.onload = (evt) => {
-                try {
-                    const data = parseCSV(evt.target.result, delimiter);
-                    renderTable(data);
-                    dbSave(data);
-                    showToast("Tải thành công!");
-                } catch (err) { log("Lỗi: " + err.message, true); }
+                processRawText(evt.target.result, delimiter);
             };
             reader.readAsText(file);
             this.value = '';
         };
 
-        function loadSampleData() {
-            const sample = [
-                ["Sản phẩm", "Giá", "Kho", "Ghi chú"],
-                ["Táo", "20000", "100", "Nhập khẩu"],
-                ["Cam", "15000", "50", "Đặc sản"],
-                ["Bưởi", "40000", "20", "Năm roi"]
-            ];
-            renderTable(sample);
-            dbSave(sample);
-            showToast("Đã tải dữ liệu mẫu");
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) return showToast("Clipboard trống");
+                // Clipboard từ Excel thường dùng Tab
+                const delimiter = text.includes('\t') ? '\t' : document.getElementById('delimiter').value;
+                if (text.includes('\t')) document.getElementById('delimiter').value = '\t';
+                
+                processRawText(text, delimiter);
+                log("Đã dán dữ liệu từ Clipboard");
+            } catch (err) {
+                log("Không thể đọc Clipboard: " + err.message, true);
+                showToast("Vui lòng dùng Ctrl + V");
+            }
+        }
+
+        // Lắng nghe sự kiện Paste toàn trang
+        window.addEventListener('paste', (e) => {
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            if (text) {
+                const delimiter = text.includes('\t') ? '\t' : document.getElementById('delimiter').value;
+                if (text.includes('\t')) document.getElementById('delimiter').value = '\t';
+                processRawText(text, delimiter);
+                log("Đã nhận dữ liệu Paste (Ctrl+V)");
+            }
+        });
+
+        function processRawText(text, delimiter) {
+            try {
+                const data = parseCSV(text, delimiter);
+                if (data.length > 0) {
+                    renderTable(data);
+                    dbSave(data);
+                    showToast("Tải dữ liệu thành công!");
+                }
+            } catch (err) {
+                log("Lỗi xử lý: " + err.message, true);
+            }
         }
 
         function exportCSV() {
@@ -274,7 +303,7 @@
             const saved = await dbLoad();
             if (saved) renderTable(saved);
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js').then(() => log("v4 Online"));
+                navigator.serviceWorker.register('sw.js').then(() => log("v5 Online"));
             }
         };
     </script>
