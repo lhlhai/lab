@@ -1,35 +1,36 @@
-const CACHE_NAME = 'csv-editor-v1';
+const CACHE_NAME = 'csv-editor-v3'; // Tăng version để ép cập nhật
 const ASSETS = [
   './',
   './index.html',
   './manifest.json'
 ];
 
-// Cài đặt Service Worker và cache các tài nguyên
 self.addEventListener('install', (event) => {
+  // Buộc Service Worker mới trở thành active ngay lập tức
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
-// Kích hoạt Service Worker và xóa cache cũ
 self.addEventListener('activate', (event) => {
+  // Xóa toàn bộ cache cũ
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Phản hồi các yêu cầu mạng từ cache hoặc mạng
 self.addEventListener('fetch', (event) => {
+  // Chiến lược: Ưu tiên mạng, nếu lỗi thì lấy từ cache
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
