@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Editor Pro v5 (Mới nhất)</title>
+    <title>CSV Editor Pro v6 (Mới nhất)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <style>
@@ -14,7 +14,7 @@
             --text: #1e293b;
             --border: #e2e8f0;
             --white: #ffffff;
-            --error: #ef4444;
+            --zebra: #f1f5f9;
         }
 
         body {
@@ -40,15 +40,14 @@
         }
         .btn:hover { background: #f1f5f9; }
         .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
-        .btn-paste { color: #d97706; border-color: #d97706; }
-
+        
         .delimiter-box {
             display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;
         }
 
         #fileInput { display: none; }
 
-        main { flex: 1; overflow: auto; padding: 1rem; position: relative; }
+        main { flex: 1; overflow: auto; padding: 1rem; }
 
         table {
             border-collapse: collapse; width: 100%; background: var(--white);
@@ -56,11 +55,20 @@
         }
         th, td {
             border: 1px solid var(--border); padding: 0.6rem;
-            text-align: left; min-width: 80px; max-width: 400px;
+            text-align: left; min-width: 60px; max-width: 400px;
             white-space: pre-wrap; word-break: break-word;
         }
-        th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; }
-        td:focus { outline: 2px solid var(--primary); background: #eff6ff; }
+        th { background: #e2e8f0; position: sticky; top: 0; z-index: 10; }
+        
+        /* Zebra Striping */
+        tbody tr:nth-child(even) { background-color: var(--zebra); }
+        tbody tr:hover { background-color: #eff6ff; }
+
+        .index-col {
+            width: 40px; text-align: center; color: #94a3b8;
+            background: #f8fafc !important; font-size: 0.8rem;
+            user-select: none; pointer-events: none;
+        }
 
         #debug {
             position: fixed; bottom: 0; left: 0; right: 0;
@@ -80,28 +88,33 @@
 
         .empty-state { text-align: center; padding: 3rem; color: #64748b; }
         
-        .instructions {
-            font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem;
-        }
+        /* Toggle Switch */
+        .toggle-container { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">CSV Editor Pro v5</div>
+        <div class="logo">CSV Editor Pro v6</div>
         
         <div class="delimiter-box">
             <span>Dấu phân cách:</span>
-            <select id="delimiter" class="select-input">
+            <select id="delimiter" class="select-input" onchange="reParseCurrentData()">
+                <option value="auto">Tự nhận diện (Auto)</option>
                 <option value=",">Dấu phẩy (,)</option>
                 <option value=";">Dấu chấm phẩy (;)</option>
                 <option value="	">Tab (TSV)</option>
             </select>
         </div>
 
-        <button class="btn btn-paste" onclick="pasteFromClipboard()">📋 Dán từ Clipboard</button>
+        <div class="toggle-container">
+            <input type="checkbox" id="showIndex" checked onchange="toggleIndexColumn()">
+            <label for="showIndex">Hiện số dòng</label>
+        </div>
+
+        <button class="btn" onclick="pasteFromClipboard()">📋 Dán</button>
         <button class="btn" onclick="triggerFileInput()">📂 Mở File</button>
-        <input type="file" id="fileInput" accept=".csv, .txt, .tsv, .dat, .tab">
+        <input type="file" id="fileInput" accept=".csv, .txt, .tsv, .dat">
         <button class="btn btn-primary" onclick="exportCSV()">💾 Xuất</button>
         <button class="btn" onclick="toggleDebug()">🛠 Debug</button>
     </header>
@@ -109,8 +122,7 @@
     <main id="app">
         <div class="empty-state">
             <h3>Sẵn sàng!</h3>
-            <p>Mở file (.csv, .txt, .tsv, .dat) hoặc copy từ Excel/Sheets rồi nhấn <b>"Dán từ Clipboard"</b>.</p>
-            <div class="instructions">Mẹo: Bạn cũng có thể nhấn <b>Ctrl + V</b> trực tiếp trên trang này.</div>
+            <p>Mở file hoặc dán dữ liệu để bắt đầu.</p>
         </div>
     </main>
 
@@ -119,6 +131,7 @@
 
     <script>
         const CONFIG = { DB: 'CSV_PRO_DB', STORE: 'data', VER: 1 };
+        let currentRawText = ""; // Lưu text gốc để re-parse khi đổi delimiter
         let currentData = [];
 
         function log(msg, isError = false) {
@@ -149,13 +162,12 @@
             const req = indexedDB.open(CONFIG.DB, CONFIG.VER);
             req.onupgradeneeded = (e) => e.target.result.createObjectStore(CONFIG.STORE);
             req.onsuccess = (e) => resolve(e.target.result);
-            req.onerror = () => log("DB Error", true);
         });
 
-        async function dbSave(data) {
+        async function dbSave(data, rawText) {
             const db = await dbPromise;
             const tx = db.transaction(CONFIG.STORE, 'readwrite');
-            tx.objectStore(CONFIG.STORE).put(data, 'session');
+            tx.objectStore(CONFIG.STORE).put({ data, rawText }, 'session');
         }
 
         async function dbLoad() {
@@ -167,8 +179,27 @@
             });
         }
 
+        // AUTO DETECT DELIMITER
+        function detectDelimiter(text) {
+            const delimiters = [',', ';', '\t'];
+            let best = ',';
+            let maxCount = -1;
+            
+            const firstLine = text.split('\n')[0];
+            delimiters.forEach(d => {
+                const count = firstLine.split(d).length;
+                if (count > maxCount) {
+                    maxCount = count;
+                    best = d;
+                }
+            });
+            log(`Tự động nhận diện dấu phân cách: [${best === '\t' ? 'TAB' : best}]`);
+            return best;
+        }
+
         // CSV PARSER
         function parseCSV(text, delimiter) {
+            if (delimiter === 'auto') delimiter = detectDelimiter(text);
             const result = [];
             let row = [], cell = '', inQuotes = false;
             const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -199,9 +230,19 @@
             const app = document.getElementById('app');
             app.innerHTML = '';
             const table = document.createElement('table');
+            const showIndex = document.getElementById('showIndex').checked;
             
             const thead = document.createElement('thead');
             const hRow = document.createElement('tr');
+            
+            // Cột Index Header
+            if (showIndex) {
+                const thIdx = document.createElement('th');
+                thIdx.textContent = '#';
+                thIdx.className = 'index-col';
+                hRow.appendChild(thIdx);
+            }
+
             (data[0] || []).forEach((h, i) => {
                 const th = document.createElement('th');
                 th.textContent = h || `Cột ${i+1}`;
@@ -213,6 +254,15 @@
             const tbody = document.createElement('tbody');
             for (let r = 1; r < data.length; r++) {
                 const tr = document.createElement('tr');
+                
+                // Cột Index Body
+                if (showIndex) {
+                    const tdIdx = document.createElement('td');
+                    tdIdx.textContent = r;
+                    tdIdx.className = 'index-col';
+                    tr.appendChild(tdIdx);
+                }
+
                 for (let c = 0; c < data[0].length; c++) {
                     const td = document.createElement('td');
                     td.textContent = data[r][c] || '';
@@ -220,7 +270,7 @@
                     td.onblur = () => {
                         if (currentData[r][c] !== td.textContent) {
                             currentData[r][c] = td.textContent;
-                            dbSave(currentData);
+                            dbSave(currentData, currentRawText);
                         }
                     };
                     tr.appendChild(td);
@@ -231,18 +281,29 @@
             app.appendChild(table);
         }
 
+        function reParseCurrentData() {
+            if (!currentRawText) return;
+            const delimiter = document.getElementById('delimiter').value;
+            const data = parseCSV(currentRawText, delimiter);
+            renderTable(data);
+        }
+
+        function toggleIndexColumn() {
+            renderTable(currentData);
+        }
+
         // ACTIONS
         function triggerFileInput() { document.getElementById('fileInput').click(); }
 
         document.getElementById('fileInput').onchange = function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            const delimiter = document.getElementById('delimiter').value;
-            log(`Mở file: ${file.name}`);
-            
             const reader = new FileReader();
             reader.onload = (evt) => {
-                processRawText(evt.target.result, delimiter);
+                currentRawText = evt.target.result;
+                reParseCurrentData();
+                dbSave(currentData, currentRawText);
+                showToast("Tải file thành công!");
             };
             reader.readAsText(file);
             this.value = '';
@@ -251,59 +312,44 @@
         async function pasteFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
-                if (!text) return showToast("Clipboard trống");
-                // Clipboard từ Excel thường dùng Tab
-                const delimiter = text.includes('\t') ? '\t' : document.getElementById('delimiter').value;
-                if (text.includes('\t')) document.getElementById('delimiter').value = '\t';
-                
-                processRawText(text, delimiter);
-                log("Đã dán dữ liệu từ Clipboard");
-            } catch (err) {
-                log("Không thể đọc Clipboard: " + err.message, true);
-                showToast("Vui lòng dùng Ctrl + V");
-            }
+                if (!text) return;
+                currentRawText = text;
+                reParseCurrentData();
+                dbSave(currentData, currentRawText);
+                showToast("Đã dán dữ liệu!");
+            } catch (err) { showToast("Vui lòng dùng Ctrl + V"); }
         }
 
-        // Lắng nghe sự kiện Paste toàn trang
         window.addEventListener('paste', (e) => {
             const text = (e.clipboardData || window.clipboardData).getData('text');
             if (text) {
-                const delimiter = text.includes('\t') ? '\t' : document.getElementById('delimiter').value;
-                if (text.includes('\t')) document.getElementById('delimiter').value = '\t';
-                processRawText(text, delimiter);
-                log("Đã nhận dữ liệu Paste (Ctrl+V)");
+                currentRawText = text;
+                reParseCurrentData();
+                dbSave(currentData, currentRawText);
             }
         });
 
-        function processRawText(text, delimiter) {
-            try {
-                const data = parseCSV(text, delimiter);
-                if (data.length > 0) {
-                    renderTable(data);
-                    dbSave(data);
-                    showToast("Tải dữ liệu thành công!");
-                }
-            } catch (err) {
-                log("Lỗi xử lý: " + err.message, true);
-            }
-        }
-
         function exportCSV() {
             if (currentData.length === 0) return;
-            const delimiter = document.getElementById('delimiter').value;
-            const csv = currentData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(delimiter)).join('\n');
+            let d = document.getElementById('delimiter').value;
+            if (d === 'auto') d = detectDelimiter(currentRawText);
+            const csv = currentData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(d)).join('\n');
             const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'data_export.csv';
+            a.download = 'export.csv';
             a.click();
         }
 
         window.onload = async () => {
             const saved = await dbLoad();
-            if (saved) renderTable(saved);
+            if (saved) {
+                currentRawText = saved.rawText;
+                currentData = saved.data;
+                renderTable(currentData);
+            }
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js').then(() => log("v5 Online"));
+                navigator.serviceWorker.register('sw.js').then(() => log("v6 Active"));
             }
         };
     </script>
