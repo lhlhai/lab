@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trình chỉnh sửa CSV Offline</title>
+    <title>Siêu Trình Chỉnh Sửa CSV Offline</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <style>
@@ -14,263 +14,113 @@
             --text: #1e293b;
             --border: #e2e8f0;
             --white: #ffffff;
+            --error: #ef4444;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0; padding: 0;
+            background: var(--bg); color: var(--text);
+            display: flex; flex-direction: column; height: 100vh;
         }
 
         header {
-            background: var(--white);
-            padding: 0.75rem 1rem;
+            background: var(--white); padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            align-items: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+            position: sticky; top: 0; z-index: 100;
         }
 
-        .logo {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-right: auto;
-            color: var(--primary);
-        }
+        .logo { font-weight: bold; margin-right: auto; color: var(--primary); }
 
         .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--white);
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            padding: 0.5rem 0.8rem; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--white); cursor: pointer; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 0.4rem;
         }
-
         .btn:hover { background: #f1f5f9; }
         .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
-        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-sample { color: #059669; border-color: #059669; }
 
         #fileInput { display: none; }
 
-        main {
-            flex: 1;
-            overflow: auto;
-            padding: 1rem;
-        }
+        main { flex: 1; overflow: auto; padding: 1rem; position: relative; }
 
         table {
-            border-collapse: collapse;
-            width: 100%;
-            background: var(--white);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            table-layout: auto;
+            border-collapse: collapse; width: 100%; background: var(--white);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px;
         }
-
         th, td {
-            border: 1px solid var(--border);
-            padding: 0.75rem;
-            text-align: left;
-            min-width: 100px;
-            max-width: 400px;
-            white-space: pre-wrap;
-            word-break: break-word;
-            vertical-align: top;
+            border: 1px solid var(--border); padding: 0.6rem;
+            text-align: left; min-width: 80px; max-width: 300px;
+            white-space: pre-wrap; word-break: break-word;
         }
+        th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; }
+        td:focus { outline: 2px solid var(--primary); background: #eff6ff; }
 
-        th {
-            background: #f1f5f9;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        td:focus {
-            outline: 2px solid var(--primary);
-            background: #eff6ff;
-            z-index: 5;
+        /* Debug Console */
+        #debug {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #1e293b; color: #38bdf8;
+            font-family: monospace; font-size: 12px;
+            max-height: 100px; overflow-y: auto;
+            padding: 5px 10px; z-index: 2000;
+            display: none; border-top: 2px solid var(--primary);
         }
 
         #toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: #334155;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: none;
-            animation: slideIn 0.3s ease-out;
-            z-index: 1000;
+            position: fixed; bottom: 120px; right: 20px;
+            background: #334155; color: white;
+            padding: 0.75rem 1rem; border-radius: 8px;
+            display: none; z-index: 1000;
         }
 
-        @keyframes slideIn {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #64748b;
-        }
-
-        @media (max-width: 600px) {
-            header { padding: 0.5rem; }
-            .logo { width: 100%; margin-bottom: 0.5rem; }
-            .btn { flex: 1; justify-content: center; }
-        }
+        .empty-state { text-align: center; padding: 3rem; color: #64748b; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">CSV Editor PWA</div>
-        <button class="btn" onclick="document.getElementById('fileInput').click()">
-            📂 Tải CSV mới
-        </button>
-        <input type="file" id="fileInput" accept=".csv,text/csv">
-        <button class="btn btn-primary" onclick="exportCSV()">
-            💾 Xuất CSV
-        </button>
+        <div class="logo">CSV Editor Pro</div>
+        <button class="btn btn-sample" onclick="loadSampleData()">✨ Dữ liệu mẫu</button>
+        <button class="btn" onclick="triggerFileInput()">📂 Chọn File CSV</button>
+        <input type="file" id="fileInput" accept=".csv, text/csv, .txt">
+        <button class="btn btn-primary" onclick="exportCSV()">💾 Xuất File</button>
+        <button class="btn" onclick="toggleDebug()">🛠 Debug</button>
     </header>
 
     <main id="app">
         <div class="empty-state">
-            <p>Chưa có dữ liệu. Hãy tải file CSV để bắt đầu chỉnh sửa.</p>
+            <h3>Chào mừng!</h3>
+            <p>Hãy chọn một file CSV từ máy tính hoặc dùng "Dữ liệu mẫu" để thử nghiệm.</p>
         </div>
     </main>
 
-    <div id="toast">Thông báo</div>
+    <div id="debug"></div>
+    <div id="toast"></div>
 
     <script>
-        const CONFIG = {
-            DB_NAME: 'CSVEditorDB',
-            STORE_NAME: 'csv_data',
-            VERSION: 1
-        };
-
+        const CONFIG = { DB: 'CSV_PRO_DB', STORE: 'data', VER: 1 };
         let currentData = [];
 
-        // 1. Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error', err));
-            });
+        // --- HỆ THỐNG LOG ---
+        function log(msg, isError = false) {
+            const d = document.getElementById('debug');
+            const time = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.style.color = isError ? '#f87171' : '#38bdf8';
+            line.textContent = `[${time}] ${msg}`;
+            d.appendChild(line);
+            d.scrollTop = d.scrollHeight;
+            console.log(msg);
+            if (isError) showToast("❌ Lỗi: " + msg);
         }
 
-        // 2. IndexedDB
-        const dbPromise = new Promise((resolve, reject) => {
-            const request = indexedDB.open(CONFIG.DB_NAME, CONFIG.VERSION);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(CONFIG.STORE_NAME)) {
-                    db.createObjectStore(CONFIG.STORE_NAME);
-                }
-            };
-            request.onsuccess = (e) => resolve(e.target.result);
-            request.onerror = (e) => reject(e.target.error);
-        });
-
-        async function saveData(data) {
-            const db = await dbPromise;
-            const tx = db.transaction(CONFIG.STORE_NAME, 'readwrite');
-            const store = tx.objectStore(CONFIG.STORE_NAME);
-            return new Promise((resolve, reject) => {
-                const request = store.put(data, 'last_session');
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            });
+        function toggleDebug() {
+            const d = document.getElementById('debug');
+            d.style.display = d.style.display === 'none' ? 'block' : 'none';
         }
 
-        async function loadSavedData() {
-            const db = await dbPromise;
-            return new Promise((resolve) => {
-                const tx = db.transaction(CONFIG.STORE_NAME, 'readonly');
-                const store = tx.objectStore(CONFIG.STORE_NAME);
-                const request = store.get('last_session');
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => resolve(null);
-            });
-        }
-
-        // 3. CSV Parser (Improved)
-        function parseCSV(text) {
-            const result = [];
-            let row = [];
-            let cell = '';
-            let inQuotes = false;
-
-            // Xử lý xuống dòng thống nhất
-            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const nextChar = text[i + 1];
-
-                if (inQuotes) {
-                    if (char === '"' && nextChar === '"') {
-                        cell += '"';
-                        i++;
-                    } else if (char === '"') {
-                        inQuotes = false;
-                    } else {
-                        cell += char;
-                    }
-                } else {
-                    if (char === '"') {
-                        inQuotes = true;
-                    } else if (char === ',') {
-                        row.push(cell);
-                        cell = '';
-                    } else if (char === '\n') {
-                        row.push(cell);
-                        result.push(row);
-                        row = [];
-                        cell = '';
-                    } else {
-                        cell += char;
-                    }
-                }
-            }
-            // Add last cell/row
-            if (cell !== '' || row.length > 0) {
-                row.push(cell);
-                result.push(row);
-            }
-            return result;
-        }
-
-        function stringifyCSV(data) {
-            return data.map(row => 
-                row.map(cell => {
-                    let c = String(cell);
-                    if (c.includes(',') || c.includes('"') || c.includes('\n')) {
-                        return `"${c.replace(/"/g, '""')}"`;
-                    }
-                    return c;
-                }).join(',')
-            ).join('\n');
-        }
-
-        // 4. UI
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.textContent = msg;
@@ -278,117 +128,162 @@
             setTimeout(() => t.style.display = 'none', 3000);
         }
 
+        // --- DATABASE ---
+        const dbPromise = new Promise((resolve) => {
+            const req = indexedDB.open(CONFIG.DB, CONFIG.VER);
+            req.onupgradeneeded = (e) => e.target.result.createObjectStore(CONFIG.STORE);
+            req.onsuccess = (e) => resolve(e.target.result);
+            req.onerror = () => log("Không thể mở IndexedDB", true);
+        });
+
+        async function dbSave(data) {
+            try {
+                const db = await dbPromise;
+                const tx = db.transaction(CONFIG.STORE, 'readwrite');
+                tx.objectStore(CONFIG.STORE).put(data, 'session');
+                log("Đã lưu vào bộ nhớ trình duyệt");
+            } catch (e) { log("Lỗi lưu DB: " + e.message, true); }
+        }
+
+        async function dbLoad() {
+            const db = await dbPromise;
+            return new Promise(r => {
+                const req = db.transaction(CONFIG.STORE).objectStore(CONFIG.STORE).get('session');
+                req.onsuccess = () => r(req.result);
+                req.onerror = () => r(null);
+            });
+        }
+
+        // --- CSV ENGINE ---
+        function parseCSV(text) {
+            log("Đang xử lý " + text.length + " ký tự...");
+            const result = [];
+            let row = [], cell = '', inQuotes = false;
+            
+            // Chuẩn hóa xuống dòng
+            const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+            for (let i = 0; i < cleanText.length; i++) {
+                const c = cleanText[i], next = cleanText[i+1];
+                if (inQuotes) {
+                    if (c === '"' && next === '"') { cell += '"'; i++; }
+                    else if (c === '"') inQuotes = false;
+                    else cell += c;
+                } else {
+                    if (c === '"') inQuotes = true;
+                    else if (c === ',') { row.push(cell); cell = ''; }
+                    else if (c === '\n') { 
+                        row.push(cell); result.push(row); 
+                        row = []; cell = ''; 
+                    }
+                    else cell += c;
+                }
+            }
+            if (cell || row.length > 0) { row.push(cell); result.push(row); }
+            log("Xử lý xong: " + result.length + " dòng");
+            return result;
+        }
+
+        // --- UI ---
         function renderTable(data) {
             if (!data || data.length === 0) return;
             currentData = data;
             const app = document.getElementById('app');
             app.innerHTML = '';
-
             const table = document.createElement('table');
-            const thead = document.createElement('thead');
-            const tbody = document.createElement('tbody');
-
+            
             // Header
-            const headerRow = document.createElement('tr');
-            data[0].forEach((val, idx) => {
+            const thead = document.createElement('thead');
+            const hRow = document.createElement('tr');
+            (data[0] || []).forEach((h, i) => {
                 const th = document.createElement('th');
-                th.textContent = val || `Cột ${idx + 1}`;
-                headerRow.appendChild(th);
+                th.textContent = h || `Cột ${i+1}`;
+                hRow.appendChild(th);
             });
-            thead.appendChild(headerRow);
+            thead.appendChild(hRow);
+            table.appendChild(thead);
 
             // Body
+            const tbody = document.createElement('tbody');
             for (let r = 1; r < data.length; r++) {
                 const tr = document.createElement('tr');
-                // Đảm bảo số cột khớp với header
-                const rowData = data[r];
                 for (let c = 0; c < data[0].length; c++) {
                     const td = document.createElement('td');
-                    td.textContent = rowData[c] || '';
+                    td.textContent = data[r][c] || '';
                     td.contentEditable = true;
                     td.onblur = () => {
                         if (currentData[r][c] !== td.textContent) {
                             currentData[r][c] = td.textContent;
-                            saveData(currentData);
-                            showToast('Đã lưu thay đổi');
-                        }
-                    };
-                    td.onkeydown = (e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            td.blur();
+                            dbSave(currentData);
                         }
                     };
                     tr.appendChild(td);
                 }
                 tbody.appendChild(tr);
             }
-
-            table.appendChild(thead);
             table.appendChild(tbody);
             app.appendChild(table);
         }
 
-        // 5. File Input Handler
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (currentData.length > 0) {
-                if (!confirm('Ghi đè dữ liệu hiện tại?')) {
-                    this.value = '';
-                    return;
-                }
-            }
-
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const text = event.target.result;
-                    const data = parseCSV(text);
-                    if (data.length > 0) {
-                        renderTable(data);
-                        await saveData(data);
-                        showToast('Đã tải file thành công');
-                    } else {
-                        showToast('File CSV trống hoặc lỗi định dạng');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    showToast('Lỗi khi đọc file CSV');
-                }
-            };
-            reader.onerror = () => showToast('Lỗi đọc file');
-            reader.readAsText(file);
-            this.value = '';
-        });
-
-        function exportCSV() {
-            if (currentData.length === 0) {
-                showToast('Không có dữ liệu');
-                return;
-            }
-            const csvContent = stringifyCSV(currentData);
-            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'data_export.csv';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('Đã xuất file');
+        // --- ACTIONS ---
+        function triggerFileInput() {
+            log("Mở trình chọn file...");
+            document.getElementById('fileInput').click();
         }
 
+        document.getElementById('fileInput').onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) { log("Không có file nào được chọn"); return; }
+            log(`Đã chọn file: ${file.name} (${file.size} bytes)`);
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const data = parseCSV(evt.target.result);
+                    renderTable(data);
+                    dbSave(data);
+                    showToast("Tải file thành công!");
+                } catch (err) { log("Lỗi xử lý file: " + err.message, true); }
+            };
+            reader.onerror = () => log("Lỗi FileReader", true);
+            reader.readAsText(file);
+            this.value = ''; // Reset
+        };
+
+        function loadSampleData() {
+            const sample = [
+                ["Tên", "Tuổi", "Công việc", "Ghi chú"],
+                ["Nguyễn Văn A", "25", "Kỹ sư", "Thích \"code\""],
+                ["Trần Thị B", "30", "Thiết kế", "Làm việc\ntừ xa"],
+                ["Lê Văn C", "22", "Sinh viên", "Hà Nội, VN"]
+            ];
+            renderTable(sample);
+            dbSave(sample);
+            showToast("Đã tải dữ liệu mẫu");
+        }
+
+        function exportCSV() {
+            if (currentData.length === 0) return showToast("Không có dữ liệu");
+            const csv = currentData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'data.csv';
+            a.click();
+            showToast("Đã xuất file");
+        }
+
+        // Init
         window.onload = async () => {
-            try {
-                const saved = await loadSavedData();
-                if (saved && saved.length > 0) {
-                    renderTable(saved);
-                    showToast('Đã khôi phục dữ liệu cũ');
-                }
-            } catch (e) {
-                console.error("Load error", e);
+            log("Ứng dụng đã sẵn sàng");
+            const saved = await dbLoad();
+            if (saved) {
+                log("Khôi phục dữ liệu cũ...");
+                renderTable(saved);
+            }
+            
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').then(() => log("SW Active"));
             }
         };
     </script>
