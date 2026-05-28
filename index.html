@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Editor v8 (Siêu ổn định)</title>
+    <title>CSV Editor v9 (Radio Delimiter)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <style>
@@ -27,24 +27,26 @@
         header {
             background: var(--white); padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border);
-            display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+            display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
             position: sticky; top: 0; z-index: 100;
         }
 
         .logo { font-weight: bold; margin-right: auto; color: var(--primary); }
 
-        .btn, .select-input {
+        .btn {
             padding: 0.5rem 0.8rem; border-radius: 6px; border: 1px solid var(--border);
             background: var(--white); cursor: pointer; font-size: 0.85rem;
             display: flex; align-items: center; gap: 0.4rem;
         }
         .btn:hover { background: #f1f5f9; }
         .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
-        .btn-danger { color: #ef4444; border-color: #ef4444; }
         
-        .delimiter-box {
-            display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;
+        .delimiter-group {
+            display: flex; align-items: center; gap: 0.8rem; 
+            background: #f1f5f9; padding: 0.4rem 0.8rem; border-radius: 8px;
+            font-size: 0.85rem;
         }
+        .delimiter-group label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
 
         #fileInput { display: none; }
 
@@ -70,17 +72,8 @@
             user-select: none;
         }
 
-        #debug {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #1e293b; color: #38bdf8;
-            font-family: monospace; font-size: 12px;
-            max-height: 120px; overflow-y: auto;
-            padding: 5px 10px; z-index: 2000;
-            display: none; border-top: 2px solid var(--primary);
-        }
-
         #toast {
-            position: fixed; bottom: 140px; right: 20px;
+            position: fixed; bottom: 20px; right: 20px;
             background: #334155; color: white;
             padding: 0.75rem 1rem; border-radius: 8px;
             display: none; z-index: 1000;
@@ -93,62 +86,39 @@
 <body>
 
     <header>
-        <div class="logo">CSV Pro v8</div>
+        <div class="logo">CSV Pro v9</div>
         
-        <div class="delimiter-box">
+        <div class="delimiter-group">
             <span>Dấu phân cách:</span>
-            <select id="delimiter" class="select-input" onchange="handleDelimiterChange()">
-                <option value="auto">Tự nhận diện (Auto)</option>
-                <option value=",">Dấu phẩy (,)</option>
-                <option value=";">Dấu chấm phẩy (;)</option>
-                <option value="tab">Tab (TSV)</option>
-            </select>
+            <label><input type="radio" name="delim" value="," checked onchange="handleDelimChange()"> Phẩy (,)</label>
+            <label><input type="radio" name="delim" value=";" onchange="handleDelimChange()"> Chấm phẩy (;)</label>
+            <label><input type="radio" name="delim" value="tab" onchange="handleDelimChange()"> Tab</label>
         </div>
 
         <div class="toggle-container">
             <input type="checkbox" id="showIndex" checked onchange="refreshTable()">
-            <label for="showIndex">Hiện số</label>
+            <label for="showIndex">Hiện số dòng</label>
         </div>
 
         <button class="btn" onclick="pasteFromClipboard()">📋 Dán</button>
         <button class="btn" onclick="triggerFileInput()">📂 Mở File</button>
         <input type="file" id="fileInput" accept=".csv, .txt, .tsv, .dat">
         <button class="btn btn-primary" onclick="exportCSV()">💾 Xuất</button>
-        <button class="btn btn-danger" onclick="clearAllData()">🗑 Xóa hết</button>
-        <button class="btn" onclick="toggleDebug()">🛠 Debug</button>
     </header>
 
     <main id="app">
         <div class="empty-state">
-            <h3>Phiên bản v8 đã sẵn sàng!</h3>
-            <p>Mở file hoặc dán dữ liệu để bắt đầu chỉnh sửa.</p>
+            <h3>Phiên bản v9 (Đơn giản)</h3>
+            <p>Chọn dấu phân cách bên trên, sau đó mở file hoặc dán dữ liệu.</p>
         </div>
     </main>
 
-    <div id="debug"></div>
     <div id="toast"></div>
 
     <script>
         const CONFIG = { DB: 'CSV_PRO_DB', STORE: 'data', VER: 1 };
         let currentRawText = ""; 
         let currentData = [];
-        let activeDelimiter = ",";
-
-        function log(msg, isError = false) {
-            const d = document.getElementById('debug');
-            const time = new Date().toLocaleTimeString();
-            const line = document.createElement('div');
-            line.style.color = isError ? '#f87171' : '#38bdf8';
-            line.textContent = `[${time}] ${msg}`;
-            d.appendChild(line);
-            d.scrollTop = d.scrollHeight;
-            if (isError) showToast("❌ " + msg);
-        }
-
-        function toggleDebug() {
-            const d = document.getElementById('debug');
-            d.style.display = d.style.display === 'none' ? 'block' : 'none';
-        }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -164,10 +134,10 @@
             req.onsuccess = (e) => resolve(e.target.result);
         });
 
-        async function dbSave(data, rawText) {
+        async function dbSave(data, rawText, delim) {
             const db = await dbPromise;
             const tx = db.transaction(CONFIG.STORE, 'readwrite');
-            tx.objectStore(CONFIG.STORE).put({ data, rawText }, 'session');
+            tx.objectStore(CONFIG.STORE).put({ data, rawText, delim }, 'session');
         }
 
         async function dbLoad() {
@@ -179,94 +149,46 @@
             });
         }
 
-        // DELIMITER LOGIC
-        function detectDelimiter(text) {
-            const delimiters = [',', ';', '\t'];
-            let best = ',';
-            let maxCount = -1;
-            
-            // Kiểm tra 5 dòng đầu tiên
-            const lines = text.split('\n').slice(0, 5);
-            delimiters.forEach(d => {
-                let count = 0;
-                lines.forEach(line => {
-                    count += line.split(d).length;
-                });
-                if (count > maxCount) {
-                    maxCount = count;
-                    best = d;
-                }
-            });
-            log(`Auto-detect: [${best === '\t' ? 'TAB' : best}] (Tần suất: ${maxCount})`);
-            return best;
+        function getActiveDelimiter() {
+            const val = document.querySelector('input[name="delim"]:checked').value;
+            return val === 'tab' ? '\t' : val;
         }
 
-        function handleDelimiterChange() {
+        function handleDelimChange() {
             if (!currentRawText) return;
-            const mode = document.getElementById('delimiter').value;
-            if (mode === 'auto') {
-                activeDelimiter = detectDelimiter(currentRawText);
-            } else if (mode === 'tab') {
-                activeDelimiter = '\t';
-            } else {
-                activeDelimiter = mode;
-            }
-            log(`Dùng dấu phân cách: [${activeDelimiter === '\t' ? 'TAB' : activeDelimiter}]`);
-            currentData = parseCSV(currentRawText, activeDelimiter);
+            const delim = getActiveDelimiter();
+            currentData = parseCSV(currentRawText, delim);
             refreshTable();
+            dbSave(currentData, currentRawText, document.querySelector('input[name="delim"]:checked').value);
         }
 
-        // PARSER SIÊU ỔN ĐỊNH
+        // PARSER
         function parseCSV(text, delimiter) {
             const result = [];
-            let row = [];
-            let cell = '';
-            let inQuotes = false;
-            
-            // Chuẩn hóa xuống dòng
+            let row = [], cell = '', inQuotes = false;
             const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
             for (let i = 0; i < cleanText.length; i++) {
-                const char = cleanText[i];
-                const nextChar = cleanText[i + 1];
-
+                const c = cleanText[i], next = cleanText[i+1];
                 if (inQuotes) {
-                    if (char === '"' && nextChar === '"') {
-                        cell += '"';
-                        i++; // Bỏ qua dấu ngoặc tiếp theo
-                    } else if (char === '"') {
-                        inQuotes = false;
-                    } else {
-                        cell += char;
-                    }
+                    if (c === '"' && next === '"') { cell += '"'; i++; }
+                    else if (c === '"') inQuotes = false;
+                    else cell += c;
                 } else {
-                    if (char === '"') {
-                        inQuotes = true;
-                    } else if (char === delimiter) {
-                        row.push(cell);
-                        cell = '';
-                    } else if (char === '\n') {
-                        row.push(cell);
-                        result.push(row);
-                        row = [];
-                        cell = '';
-                    } else {
-                        cell += char;
+                    if (c === '"') inQuotes = true;
+                    else if (c === delimiter) { row.push(cell); cell = ''; }
+                    else if (c === '\n') { 
+                        row.push(cell); result.push(row); 
+                        row = []; cell = ''; 
                     }
+                    else cell += c;
                 }
             }
-            // Thêm ô/dòng cuối cùng
-            if (cell !== '' || row.length > 0) {
-                row.push(cell);
-                result.push(row);
-            }
-            log(`Parse xong: ${result.length} dòng, ${result[0]?.length || 0} cột`);
+            if (cell || row.length > 0) { row.push(cell); result.push(row); }
             return result;
         }
 
-        function refreshTable() {
-            renderTable(currentData);
-        }
+        function refreshTable() { renderTable(currentData); }
 
         function renderTable(data) {
             if (!data || data.length === 0) return;
@@ -277,33 +199,24 @@
             
             const thead = document.createElement('thead');
             const hRow = document.createElement('tr');
-            
             if (showIndex) {
-                const thIdx = document.createElement('th');
-                thIdx.textContent = '#';
-                thIdx.className = 'index-col';
-                hRow.appendChild(thIdx);
+                const th = document.createElement('th'); th.textContent = '#'; th.className = 'index-col';
+                hRow.appendChild(th);
             }
-
             const columnCount = data[0].length;
             data[0].forEach((h, i) => {
-                const th = document.createElement('th');
-                th.textContent = h || `Cột ${i+1}`;
+                const th = document.createElement('th'); th.textContent = h || `Cột ${i+1}`;
                 hRow.appendChild(th);
             });
-            thead.appendChild(hRow);
-            table.appendChild(thead);
+            thead.appendChild(hRow); table.appendChild(thead);
 
             const tbody = document.createElement('tbody');
             for (let r = 1; r < data.length; r++) {
                 const tr = document.createElement('tr');
                 if (showIndex) {
-                    const tdIdx = document.createElement('td');
-                    tdIdx.textContent = r;
-                    tdIdx.className = 'index-col';
-                    tr.appendChild(tdIdx);
+                    const td = document.createElement('td'); td.textContent = r; td.className = 'index-col';
+                    tr.appendChild(td);
                 }
-
                 for (let c = 0; c < columnCount; c++) {
                     const td = document.createElement('td');
                     td.textContent = data[r][c] || '';
@@ -311,15 +224,14 @@
                     td.onblur = () => {
                         if (currentData[r][c] !== td.textContent) {
                             currentData[r][c] = td.textContent;
-                            dbSave(currentData, currentRawText);
+                            dbSave(currentData, currentRawText, document.querySelector('input[name="delim"]:checked').value);
                         }
                     };
                     tr.appendChild(td);
                 }
                 tbody.appendChild(tr);
             }
-            table.appendChild(tbody);
-            app.appendChild(table);
+            table.appendChild(tbody); app.appendChild(table);
         }
 
         function triggerFileInput() { document.getElementById('fileInput').click(); }
@@ -330,8 +242,7 @@
             const reader = new FileReader();
             reader.onload = (evt) => {
                 currentRawText = evt.target.result;
-                handleDelimiterChange();
-                dbSave(currentData, currentRawText);
+                handleDelimChange();
                 showToast("Đã mở file!");
             };
             reader.readAsText(file);
@@ -343,9 +254,11 @@
                 const text = await navigator.clipboard.readText();
                 if (!text) return;
                 currentRawText = text;
-                handleDelimiterChange();
-                dbSave(currentData, currentRawText);
-                showToast("Đã dán dữ liệu!");
+                // Nếu dán từ Excel (có tab), tự chuyển radio sang Tab
+                if (text.includes('\t')) {
+                    document.querySelector('input[name="delim"][value="tab"]').checked = true;
+                }
+                handleDelimChange();
             } catch (err) { showToast("Vui lòng dùng Ctrl + V"); }
         }
 
@@ -353,24 +266,15 @@
             const text = (e.clipboardData || window.clipboardData).getData('text');
             if (text) {
                 currentRawText = text;
-                handleDelimiterChange();
-                dbSave(currentData, currentRawText);
+                if (text.includes('\t')) document.querySelector('input[name="delim"][value="tab"]').checked = true;
+                handleDelimChange();
             }
         });
 
-        function clearAllData() {
-            if (confirm("Xóa toàn bộ dữ liệu hiện tại?")) {
-                currentRawText = "";
-                currentData = [];
-                document.getElementById('app').innerHTML = '<div class="empty-state"><h3>Đã xóa hết!</h3><p>Mở file hoặc dán dữ liệu để bắt đầu.</p></div>';
-                dbSave([], "");
-                showToast("Đã xóa dữ liệu");
-            }
-        }
-
         function exportCSV() {
             if (currentData.length === 0) return;
-            const csv = currentData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(activeDelimiter)).join('\n');
+            const delim = getActiveDelimiter();
+            const csv = currentData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(delim)).join('\n');
             const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -379,17 +283,18 @@
         }
 
         window.onload = async () => {
-            log("Ứng dụng v8 khởi động");
             const saved = await dbLoad();
             if (saved && saved.rawText) {
                 currentRawText = saved.rawText;
                 currentData = saved.data;
-                activeDelimiter = detectDelimiter(currentRawText);
+                if (saved.delim) {
+                    const rb = document.querySelector(`input[name="delim"][value="${saved.delim}"]`);
+                    if (rb) rb.checked = true;
+                }
                 renderTable(currentData);
-                log("Đã khôi phục phiên làm việc cũ");
             }
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js').then(() => log("v8 Online"));
+                navigator.serviceWorker.register('sw.js');
             }
         };
     </script>
